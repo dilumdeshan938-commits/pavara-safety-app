@@ -1,0 +1,3136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A84FF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pavara Payroll">
+<title>Pavara Payroll System</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<style>
+/* ── DESIGN TOKENS ─────────────────────────────────── */
+:root {
+  --font: -apple-system, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --mono: 'SF Mono', ui-monospace, monospace;
+  --sw: 236px;
+  --r: 10px; --rm: 13px; --rl: 16px;
+  --ease: .22s cubic-bezier(.4,0,.2,1);
+}
+:root, [data-theme="dark"] {
+  --bg: #000;
+  --card: rgba(28,28,30,.97);
+  --card2: rgba(44,44,46,.95);
+  --card3: rgba(58,58,60,.9);
+  --border: rgba(255,255,255,.09);
+  --border2: rgba(255,255,255,.15);
+  --ac: #0A84FF; --ach: #409CFF; --ag: rgba(10,132,255,.22);
+  --wn: #FF9F0A; --wg: rgba(255,159,10,.2);
+  --dn: #FF453A; --dg: rgba(255,69,58,.2);
+  --ok: #30D158; --og: rgba(48,209,88,.2);
+  --pu: #BF5AF2;
+  --t1: rgba(255,255,255,.92);
+  --t2: rgba(255,255,255,.52);
+  --t3: rgba(255,255,255,.28);
+  --t4: rgba(255,255,255,.11);
+  --shadow: 0 4px 20px rgba(0,0,0,.4), 0 1px 4px rgba(0,0,0,.25);
+  --sbbg: rgba(14,14,16,.96);
+  --tbbg: rgba(14,14,16,.9);
+  --ckbg: linear-gradient(135deg,#1c1c1e,#0c0c10 55%,#101028);
+}
+[data-theme="light"] {
+  --bg: #F2F2F7;
+  --card: rgba(255,255,255,.96);
+  --card2: rgba(242,242,247,.98);
+  --card3: rgba(229,229,234,.95);
+  --border: rgba(60,60,67,.09);
+  --border2: rgba(60,60,67,.16);
+  --ac: #007AFF; --ach: #0056CC; --ag: rgba(0,122,255,.14);
+  --wn: #FF9500; --wg: rgba(255,149,0,.14);
+  --dn: #FF3B30; --dg: rgba(255,59,48,.14);
+  --ok: #34C759; --og: rgba(52,199,89,.14);
+  --pu: #AF52DE;
+  --t1: rgba(0,0,0,.88);
+  --t2: rgba(60,60,67,.56);
+  --t3: rgba(60,60,67,.34);
+  --t4: rgba(60,60,67,.12);
+  --shadow: 0 2px 12px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
+  --sbbg: rgba(248,248,252,.98);
+  --tbbg: rgba(248,248,252,.92);
+  --ckbg: linear-gradient(135deg,#ffffff,#eef3ff 50%,#e4eeff);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--t1);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  transition: background var(--ease), color var(--ease);
+}
+
+/* ── SIDEBAR ── */
+.sb {
+  width: var(--sw);
+  background: var(--sbbg);
+  backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  height: 100vh; position: fixed; left: 0; top: 0; z-index: 100;
+  transition: background var(--ease), transform var(--ease);
+}
+.sb-logo {
+  padding: 20px 15px 15px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 9px;
+}
+.logo-ico {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--ac), var(--pu));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .75rem; flex-shrink: 0;
+}
+.logo-name { font-size: .88rem; font-weight: 700; color: var(--t1); letter-spacing: -.02em; }
+.logo-sub  { font-size: .56rem; color: var(--t3); }
+.sb nav    { padding: 8px 0; flex: 1; overflow-y: auto; }
+.nav-sec   { font-size: .55rem; font-weight: 600; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; padding: 10px 14px 3px; }
+.nav-item  {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 9px; margin: 1px 6px;
+  cursor: pointer; color: var(--t2);
+  font-size: .82rem; font-weight: 500;
+  border-radius: var(--r);
+  transition: all var(--ease);
+  min-height: 40px;
+}
+.nav-item:hover { background: rgba(255,255,255,.06); color: var(--t1); }
+[data-theme="light"] .nav-item:hover { background: rgba(0,0,0,.05); }
+.nav-item.active { background: var(--ac); color: #fff; box-shadow: 0 2px 10px var(--ag); }
+.nav-ico { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .74rem; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--dn); color: #fff;
+  font-size: .54rem; font-weight: 700; padding: 1px 5px;
+  border-radius: 99px; min-width: 16px; text-align: center;
+}
+.sb-foot { padding: 11px 14px; border-top: 1px solid var(--border); font-size: .54rem; color: var(--t3); }
+
+/* ── MOBILE OVERLAY & CLOSE BUTTON ── */
+.sb-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+.sb-close {
+  display: none;
+  position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px;
+  background: var(--card3); border: none;
+  border-radius: 50%; cursor: pointer;
+  color: var(--t2); font-size: .7rem;
+  align-items: center; justify-content: center;
+}
+
+/* ── HAMBURGER ── */
+.hamburger {
+  display: none;
+  width: 36px; height: 36px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--r); cursor: pointer;
+  align-items: center; justify-content: center;
+  color: var(--t1); font-size: .84rem;
+  flex-shrink: 0;
+}
+
+/* ── MAIN ── */
+.main { margin-left: var(--sw); flex: 1; height: 100vh; overflow-y: auto; background: var(--bg); min-width: 0; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--tbbg);
+  backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px; height: 46px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+  transition: background var(--ease);
+  gap: 8px;
+}
+.topbar-title { font-size: .88rem; font-weight: 600; color: var(--t1); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.fb-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 3px 9px 3px 6px;
+}
+.fb-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+.fb-lbl { font-size: .58rem; font-weight: 600; color: var(--t2); }
+.theme-btn {
+  width: 40px; height: 21px;
+  background: var(--card3); border: 1px solid var(--border2);
+  border-radius: 99px; cursor: pointer; position: relative; transition: background var(--ease);
+  flex-shrink: 0;
+}
+[data-theme="light"] .theme-btn { background: var(--ac); border-color: var(--ac); }
+.theme-knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  transition: transform var(--ease);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .52rem;
+}
+[data-theme="light"] .theme-knob { transform: translateX(19px); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; flex-direction: column; gap: 14px; animation: fadeUp .24s ease both; }
+.page.active { display: flex; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── CARD ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 15px 16px;
+  box-shadow: var(--shadow);
+  transition: background var(--ease);
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 11px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 6px;
+}
+.card-title { font-size: .86rem; font-weight: 600; color: var(--t1); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-size: .54rem; font-weight: 600; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: .04em; text-transform: uppercase;
+}
+.chip-ac  { color: var(--ac); background: var(--ag); }
+.chip-wn  { color: var(--wn); background: var(--wg); }
+.chip-dn  { color: var(--dn); background: var(--dg); }
+.chip-ok  { color: var(--ok); background: var(--og); }
+
+/* ── FORM ── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px; }
+.field {
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--rm); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.field:focus-within { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ag); }
+.field label { font-size: .54rem; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .07em; }
+.field input, .field select {
+  background: transparent; border: none; outline: none;
+  color: var(--t1); font-family: var(--font);
+  font-size: .86rem; font-weight: 500; width: 100%;
+  min-height: 28px;
+}
+.field input::placeholder { color: var(--t4); }
+.field select { cursor: pointer; }
+.field select option { background: #1c1c1e; color: #fff; }
+[data-theme="light"] .field select option { background: #fff; color: #000; }
+.span2 { grid-column: span 2; }
+
+/* ── BUTTONS ── */
+.btn-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 13px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 9px 16px; border-radius: var(--r);
+  font-family: var(--font); font-size: .77rem; font-weight: 600;
+  cursor: pointer; border: none; transition: all var(--ease); letter-spacing: -.01em;
+  min-height: 38px;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.95) !important; }
+.btn-p  { background: var(--ac); color: #fff; box-shadow: 0 2px 8px var(--ag); }
+.btn-p:hover { background: var(--ach); transform: translateY(-1px); }
+.btn-s  { background: var(--card2); color: var(--t2); border: 1px solid var(--border2); }
+.btn-s:hover { background: var(--card3); color: var(--t1); }
+.btn-d  { background: rgba(255,69,58,.1); color: var(--dn); border: 1px solid rgba(255,69,58,.2); }
+.btn-d:hover { background: rgba(255,69,58,.17); }
+.btn-g  { background: rgba(48,209,88,.1); color: var(--ok); border: 1px solid rgba(48,209,88,.2); }
+.btn-g:hover { background: rgba(48,209,88,.17); }
+.btn-w  { background: rgba(255,159,10,.1); color: var(--wn); border: 1px solid rgba(255,159,10,.2); }
+.btn-sm { padding: 7px 11px; font-size: .68rem; min-height: 34px; }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x: auto; border-radius: var(--rm); border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: .74rem; }
+th {
+  background: var(--card2); color: var(--t3);
+  font-size: .54rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+  padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 9px 11px; border-bottom: 1px solid var(--border); color: var(--t1); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.03); }
+[data-theme="light"] tr:hover td { background: rgba(0,0,0,.02); }
+.mono { font-family: var(--mono); font-size: .7rem; color: var(--ac); }
+
+/* ── BADGES ── */
+.badge { display: inline-flex; padding: 2px 6px; border-radius: 4px; font-size: .54rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.b-ok { background: rgba(48,209,88,.14); color: var(--ok); }
+.b-wn { background: rgba(255,159,10,.14); color: var(--wn); }
+.b-dn { background: rgba(255,69,58,.14);  color: var(--dn); }
+.b-ac { background: rgba(10,132,255,.14); color: var(--ac); }
+.b-pu { background: rgba(191,90,242,.14); color: var(--pu); }
+
+/* ── CLOCK HERO ── */
+.clock-card {
+  background: var(--ckbg);
+  border: 1px solid var(--border2);
+  border-radius: var(--rl);
+  padding: 22px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; overflow: hidden;
+  flex-wrap: wrap; gap: 12px;
+}
+.clock-card::before {
+  content: ''; position: absolute; top: -50px; right: -50px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, var(--ag), transparent 65%);
+  border-radius: 50%; pointer-events: none;
+}
+.clock-time { font-size: 2.8rem; font-weight: 800; color: var(--t1); letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.clock-date { font-size: .7rem; color: var(--t2); margin-top: 5px; }
+.clock-right { text-align: right; }
+.clock-lbl   { font-size: .55rem; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+.clock-greet { font-size: 1.2rem; font-weight: 700; color: var(--t1); letter-spacing: -.03em; }
+.clock-greet .hi { color: var(--ac); }
+
+/* ── STAT GRID ── */
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--rl); padding: 14px 15px;
+  box-shadow: var(--shadow); transition: transform var(--ease);
+}
+.stat-card:hover { transform: translateY(-1px); }
+.stat-ico { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .84rem; margin-bottom: 9px; }
+.ico-bl { background: rgba(10,132,255,.12); color: var(--ac); }
+.ico-gn { background: rgba(48,209,88,.12);  color: var(--ok); }
+.ico-or { background: rgba(255,159,10,.12); color: var(--wn); }
+.ico-rd { background: rgba(255,69,58,.12);  color: var(--dn); }
+.stat-lbl { font-size: .56rem; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+.stat-val { font-size: 2rem; font-weight: 800; color: var(--t1); letter-spacing: -.04em; line-height: 1; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: .62rem; color: var(--t3); margin-top: 2px; }
+
+/* ── ALERT TABLE ── */
+.alert-tbl-wrap { overflow-x: auto; border-radius: var(--rm); border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+.alert-tbl { width: 100%; border-collapse: collapse; font-size: .74rem; }
+.alert-tbl th {
+  background: var(--card2); color: var(--t3);
+  font-size: .54rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+  padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.alert-tbl td { padding: 9px 11px; border-bottom: 1px solid var(--border); color: var(--t1); vertical-align: middle; white-space: nowrap; }
+.alert-tbl tr:last-child td { border-bottom: none; }
+.alert-tbl tr.row-exp td { background: rgba(255,69,58,.04); }
+.alert-tbl tr.row-wrn td { background: rgba(255,159,10,.03); }
+.alert-tbl tr:hover td { filter: brightness(1.08); }
+.empty-state { text-align: center; padding: 28px; color: var(--t3); font-size: .78rem; }
+.empty-ico   { font-size: 1.5rem; margin-bottom: 5px; opacity: .28; }
+
+/* ── LINK SELECT (admin approval) ── */
+.link-select {
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 6px 9px;
+  color: var(--t1); font-family: var(--font); font-size: .76rem;
+  cursor: pointer; outline: none; width: 100%; min-width: 160px;
+  transition: border-color var(--ease);
+}
+.link-select:focus { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ag); }
+.link-select option { background: #1c1c1e; color: #fff; }
+[data-theme="light"] .link-select option { background: #fff; color: #000; }
+.linked-name-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .62rem; font-weight: 600; color: var(--ok);
+  background: rgba(48,209,88,.12); border-radius: 4px;
+  padding: 2px 7px; white-space: nowrap;
+}
+.linked-name-badge i { font-size: .52rem; }
+
+/* ── MY ROW HIGHLIGHT ── */
+.alert-tbl tr.row-mine td {
+  background: rgba(10,132,255,.10) !important;
+  border-left: 3px solid var(--ac);
+}
+.alert-tbl tr.row-mine td strong { color: var(--ac); font-weight: 800; }
+.mine-pin {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: .52rem; font-weight: 700; color: var(--ac);
+  background: rgba(10,132,255,.15); border-radius: 4px;
+  padding: 1px 5px; margin-left: 4px; letter-spacing: .04em;
+}
+
+/* ── SEARCH BAR ── */
+.search-bar-wrap {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.search-field {
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--rm); padding: 8px 12px;
+  display: flex; align-items: center; gap: 7px;
+  flex: 1; min-width: 180px;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.search-field:focus-within { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ag); }
+.search-field i { color: var(--t3); font-size: .76rem; flex-shrink: 0; }
+.search-field input {
+  background: transparent; border: none; outline: none;
+  color: var(--t1); font-family: var(--font);
+  font-size: .82rem; font-weight: 500; width: 100%; min-height: 24px;
+}
+.search-field input::placeholder { color: var(--t3); }
+.search-filter {
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--rm); padding: 8px 10px;
+  color: var(--t1); font-family: var(--font); font-size: .78rem;
+  cursor: pointer; outline: none;
+  transition: border-color var(--ease);
+  min-height: 40px;
+}
+.search-filter:focus { border-color: var(--ac); }
+.search-filter option { background: #1c1c1e; color: #fff; }
+[data-theme="light"] .search-filter option { background: #fff; color: #000; }
+
+/* ── TOAST ── */
+.toast-wrap { position: fixed; bottom: 18px; right: 18px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; max-width: calc(100vw - 36px); }
+.toast {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: var(--rm); padding: 10px 13px;
+  font-size: .76rem; font-weight: 500; color: var(--t1);
+  display: flex; align-items: center; gap: 8px;
+  animation: t-in .26s cubic-bezier(.34,1.56,.64,1) both;
+  min-width: 200px; max-width: 300px; box-shadow: var(--shadow);
+}
+.t-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.toast.ok .t-dot { background: var(--ok); }
+.toast.er .t-dot { background: var(--dn); }
+.toast.nf .t-dot { background: var(--ac); }
+@keyframes t-in  { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes t-out { to   { opacity: 0; transform: translateX(110%); } }
+
+/* ── MODAL ── */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(6px); padding: 16px; }
+.modal-bg.show { display: flex; }
+.modal-box {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: var(--rl); padding: 22px; max-width: 370px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  animation: m-in .22s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes m-in { from { transform: scale(.88); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal-title { font-size: .94rem; font-weight: 700; margin-bottom: 6px; }
+.modal-body  { color: var(--t2); font-size: .78rem; margin-bottom: 17px; line-height: 1.5; }
+
+/* ── PAGE HEADER ── */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.page-title  { font-size: 1.3rem; font-weight: 800; letter-spacing: -.04em; color: var(--t1); }
+.page-sub    { font-size: .64rem; color: var(--t3); margin-top: 1px; }
+.fb-note { background: rgba(10,132,255,.07); border: 1px solid rgba(10,132,255,.14); border-radius: var(--rm); padding: 8px 12px; font-size: .67rem; font-weight: 500; color: var(--ac); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tbl-empty { padding: 18px; text-align: center; color: var(--t3); font-size: .7rem; }
+
+/* ── AUTH SCREEN ── */
+#auth-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500; flex-direction: column; gap: 0;
+  padding: 20px;
+}
+.auth-box {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--rl);
+  padding: 30px 28px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.auth-logo {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+}
+.auth-logo-ico {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--ac), var(--pu));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .9rem;
+}
+.auth-title { font-size: 1.1rem; font-weight: 800; letter-spacing: -.03em; }
+.auth-sub   { font-size: .66rem; color: var(--t3); margin-top: 1px; }
+.auth-field {
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--rm); padding: 11px 13px;
+  display: flex; flex-direction: column; gap: 3px;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.auth-field:focus-within { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ag); }
+.auth-field label { font-size: .52rem; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .07em; }
+.auth-field input {
+  background: transparent; border: none; outline: none;
+  color: var(--t1); font-family: var(--font);
+  font-size: .9rem; font-weight: 500; width: 100%; min-height: 26px;
+}
+.auth-field input::placeholder { color: var(--t4); }
+.auth-btn {
+  width: 100%; padding: 11px; background: var(--ac); color: #fff;
+  border: none; border-radius: var(--r); font-family: var(--font);
+  font-size: .84rem; font-weight: 700; cursor: pointer;
+  transition: all var(--ease); letter-spacing: -.01em;
+}
+.auth-btn:hover { background: var(--ach); transform: translateY(-1px); }
+.auth-btn:active { transform: scale(.97); }
+.auth-err {
+  background: var(--dg); border: 1px solid rgba(255,69,58,.25);
+  border-radius: var(--r); padding: 9px 12px;
+  font-size: .73rem; color: var(--dn); display: none;
+}
+.auth-pending {
+  background: var(--wg); border: 1px solid rgba(255,159,10,.25);
+  border-radius: var(--r); padding: 12px 14px;
+  font-size: .74rem; color: var(--wn); line-height: 1.5; display: none;
+  text-align: center;
+}
+.auth-tabs {
+  display: flex; gap: 6px;
+}
+.auth-tab {
+  flex: 1; padding: 8px; background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: var(--r); font-family: var(--font); font-size: .74rem; font-weight: 600;
+  color: var(--t2); cursor: pointer; transition: all var(--ease); text-align: center;
+}
+.auth-tab.active { background: var(--ac); color: #fff; border-color: var(--ac); }
+
+/* ── USER PILL IN TOPBAR ── */
+.user-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 3px 9px 3px 6px;
+  cursor: pointer; transition: background var(--ease);
+}
+.user-pill:hover { background: var(--card3); }
+.user-avatar {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--ac), var(--pu));
+  display: flex; align-items: center; justify-content: center;
+  font-size: .52rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.user-name-pill { font-size: .6rem; font-weight: 600; color: var(--t1); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── ADMIN PANEL ── */
+.admin-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .52rem; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--ac), var(--pu));
+  border-radius: 4px; padding: 2px 6px; letter-spacing: .04em;
+}
+.pending-row td { background: rgba(255,159,10,.06) !important; }
+
+/* ── ROLE-BASED NAV HIDING ── */
+/* Admin-only nav items are hidden until admin logs in */
+.admin-only-nav { display: none !important; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--card3); border-radius: 4px; }
+
+/* ═══ RESPONSIVE BREAKPOINTS ═══ */
+@media (max-width: 860px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .fb-pill .fb-lbl { display: none; }
+}
+@media (max-width: 680px) {
+  .sb { transform: translateX(-100%); box-shadow: none; }
+  .sb.open { transform: translateX(0); box-shadow: 4px 0 30px rgba(0,0,0,.5); }
+  .sb-overlay.open { display: block; }
+  .sb-close { display: flex; }
+  .main { margin-left: 0; }
+  .hamburger { display: flex; }
+  .topbar { padding: 0 12px; gap: 8px; }
+  .fb-pill { display: none; }
+  .page { padding: 12px; gap: 12px; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-header .btn { align-self: flex-start; }
+  .clock-card { flex-direction: column; align-items: flex-start; gap: 10px; padding: 18px; }
+  .clock-time { font-size: 2.4rem; }
+  .clock-right { text-align: left; }
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-val { font-size: 1.6rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .span2 { grid-column: span 1; }
+  .card { padding: 13px 13px; }
+  .btn-row { flex-direction: column; }
+  .btn-row .btn { width: 100%; justify-content: center; }
+  .card-head { flex-wrap: wrap; gap: 8px; }
+  .modal-box { max-width: 100%; }
+  .toast { min-width: 180px; max-width: calc(100vw - 36px); }
+  .search-bar-wrap { flex-direction: column; }
+  .search-field { min-width: unset; width: 100%; }
+  .user-name-pill { display: none; }
+}
+@media (max-width: 400px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-val { font-size: 1.4rem; }
+  .stat-card { padding: 11px 12px; }
+  .clock-time { font-size: 2rem; }
+  .page { padding: 10px; gap: 10px; }
+  .card { padding: 11px 11px; border-radius: var(--rm); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-ico"><i class="fa-solid fa-bolt"></i></div>
+      <div>
+        <div class="auth-title">Pavara Payroll</div>
+        <div class="auth-sub">Sign in to continue</div>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-emp" onclick="switchAuthTab('emp')">Employee</div>
+      <div class="auth-tab" id="tab-admin" onclick="switchAuthTab('admin')">Admin</div>
+    </div>
+
+    <div id="auth-emp-fields">
+      <div class="auth-field" style="margin-bottom:10px">
+        <label>Your Login Name</label>
+        <input id="login-name" placeholder="e.g. Thushara" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pin').focus()">
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input id="login-pin" type="password" placeholder="Min. 4 characters" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()">
+      </div>
+    </div>
+
+    <!-- Admin login -->
+    <div id="auth-admin-fields" style="display:none">
+      <div class="auth-field">
+        <label>Admin Passphrase</label>
+        <input id="login-admin-pass" type="password" placeholder="Admin secret" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()">
+      </div>
+    </div>
+
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-pending" id="auth-pending">
+      <i class="fa-solid fa-clock" style="margin-bottom:5px;font-size:1.1rem;display:block"></i>
+      <strong>Awaiting Admin Approval</strong><br>
+      Your account is registered. The Admin will link your name to your official record and approve you. Once approved, you can log in freely every day.
+    </div>
+
+    <button class="auth-btn" id="auth-btn" onclick="handleLogin()">Sign In</button>
+    <div style="font-size:.62rem;color:var(--t3);text-align:center">
+      First time? Enter any login name + password to register. Admin will link &amp; approve you.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR OVERLAY ═══ -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sb" id="sidebar">
+  <button class="sb-close" onclick="closeSidebar()" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+  <div class="sb-logo">
+    <div class="logo-ico"><i class="fa-solid fa-bolt"></i></div>
+    <div>
+      <div class="logo-name">Pavara</div>
+      <div class="logo-sub">Payroll &amp; HR System</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-sec">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <div class="nav-ico"><i class="fa-solid fa-gauge-high"></i></div>
+      Dashboard
+      <span class="nav-badge" id="warn-badge" style="display:none">0</span>
+    </div>
+    <!-- Records and Analytics sections: hidden for employees, shown only for admin -->
+    <div class="nav-sec admin-only-nav">Records</div>
+    <div class="nav-item admin-only-nav" onclick="showPage('employees')">
+      <div class="nav-ico"><i class="fa-solid fa-users"></i></div>
+      Employees
+    </div>
+    <div class="nav-item admin-only-nav" onclick="showPage('safety')">
+      <div class="nav-ico"><i class="fa-solid fa-shield-halved"></i></div>
+      Safety &amp; Police
+    </div>
+    <div class="nav-sec admin-only-nav">Analytics</div>
+    <div class="nav-item admin-only-nav" onclick="showPage('reports')">
+      <div class="nav-ico"><i class="fa-solid fa-chart-bar"></i></div>
+      Reports
+    </div>
+    <!-- Admin-only section -->
+    <div id="admin-nav-sec" style="display:none">
+      <div class="nav-sec">Admin</div>
+      <div class="nav-item" onclick="showPage('admin')">
+        <div class="nav-ico"><i class="fa-solid fa-user-shield"></i></div>
+        User Approvals
+        <span class="nav-badge" id="pending-badge" style="display:none">0</span>
+      </div>
+    </div>
+  </nav>
+  <div class="sb-foot">v8.0 &middot; Firebase Realtime DB</div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main" id="main-content" style="display:none">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="hamburger" id="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="fb-pill">
+        <div class="fb-dot"></div>
+        <div class="fb-lbl">Firebase Live</div>
+      </div>
+      <!-- Logged-in user pill -->
+      <div class="user-pill" onclick="showUserMenu()" id="user-pill" style="display:none">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-name-pill" id="user-name-pill">—</div>
+      </div>
+      <div class="theme-btn" onclick="toggleTheme()" role="button" aria-label="Toggle theme">
+        <div class="theme-knob"><span id="theme-ico">🌙</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Real-time compliance overview</div>
+      </div>
+      <button class="btn btn-s" onclick="refreshDash()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+
+    <div class="clock-card">
+      <div>
+        <div class="clock-time" id="clk-time">00:00:00</div>
+        <div class="clock-date" id="clk-date">Loading…</div>
+      </div>
+      <div class="clock-right">
+        <div class="clock-lbl">Welcome back</div>
+        <div class="clock-greet"><span id="greeting" class="hi">Good Morning</span> 👋</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-ico ico-gn"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-lbl">Total Employees</div>
+        <div class="stat-val" id="s-total">0</div>
+        <div class="stat-sub">Active records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico ico-bl"><i class="fa-solid fa-id-card"></i></div>
+        <div class="stat-lbl">Safety Records</div>
+        <div class="stat-val" id="s-safety">0</div>
+        <div class="stat-sub">Registered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico ico-or"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-lbl">Expiring Soon</div>
+        <div class="stat-val" id="s-expiring">0</div>
+        <div class="stat-sub">Within threshold</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico ico-rd"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="stat-lbl">Expired</div>
+        <div class="stat-val" id="s-expired">0</div>
+        <div class="stat-sub">Needs renewal</div>
+      </div>
+    </div>
+
+    <!-- Advanced Search -->
+    <div class="card" style="padding:12px 14px">
+      <div class="search-bar-wrap">
+        <div class="search-field">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="dash-search" placeholder="Search by name, card number, document type…" oninput="renderDashAlerts()">
+        </div>
+        <select class="search-filter" id="dash-filter-status" onchange="renderDashAlerts()">
+          <option value="">All Statuses</option>
+          <option value="exp">Expired Only</option>
+          <option value="wrn">Expiring Soon</option>
+        </select>
+        <select class="search-filter" id="dash-filter-doc" onchange="renderDashAlerts()">
+          <option value="">All Documents</option>
+          <option value="sc">Safety Card</option>
+          <option value="pr">Police Report</option>
+        </select>
+        <select class="search-filter" id="dash-filter-type" onchange="renderDashAlerts()">
+          <option value="">All Types</option>
+          <option value="Temporary">Temporary</option>
+          <option value="Annual">Annual</option>
+        </select>
+        <button class="btn btn-s btn-sm" onclick="clearDashSearch()" title="Clear filters">
+          <i class="fa-solid fa-xmark"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Unified Alert Table -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <i class="fa-solid fa-bell" style="color:var(--wn)"></i>
+          Status Alerts
+          <span class="chip chip-ac" id="alert-chip" style="margin-left:2px">—</span>
+        </div>
+        <span style="font-size:.62rem;color:var(--t3)">
+          <i class="fa-solid fa-circle" style="color:var(--dn);font-size:.38rem;margin-right:2px"></i>Expired &nbsp;
+          <i class="fa-solid fa-circle" style="color:var(--wn);font-size:.38rem;margin-right:2px"></i>Expiring Soon &nbsp;
+          <i class="fa-solid fa-circle" style="color:var(--ac);font-size:.38rem;margin-right:2px"></i>Your Record
+        </span>
+      </div>
+      <div id="dash-alerts-wrap">
+        <div class="empty-state"><div class="empty-ico"><i class="fa-solid fa-circle-check"></i></div>All documents are valid</div>
+      </div>
+    </div>
+
+    <!-- ADMIN FULL COMPLIANCE TABLE — visible only when Admin is logged in -->
+    <div class="card admin-only-nav" id="dash-full-table-card">
+      <div class="card-head">
+        <div class="card-title">
+          <i class="fa-solid fa-table" style="color:var(--ac)"></i>
+          Full Compliance Table
+          <span class="chip chip-ac" id="dash-full-chip">All employees</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="admin-badge"><i class="fa-solid fa-shield"></i> Admin View</span>
+          <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fa-solid fa-file-excel"></i> Export</button>
+        </div>
+      </div>
+      <!-- Search bar for the full table -->
+      <div class="search-bar-wrap" style="margin-bottom:12px">
+        <div class="search-field">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="dash-full-search" placeholder="Search by name, NIC, card number, designation…" oninput="renderDashFullTable()">
+        </div>
+        <select class="search-filter" id="dash-full-filter-type" onchange="renderDashFullTable()">
+          <option value="">All Types</option>
+          <option value="Temporary">Temporary</option>
+          <option value="Annual">Annual</option>
+        </select>
+        <select class="search-filter" id="dash-full-filter-status" onchange="renderDashFullTable()">
+          <option value="">All Statuses</option>
+          <option value="exp">Has Expired</option>
+          <option value="wrn">Expiring Soon</option>
+          <option value="ok">All Valid</option>
+        </select>
+        <button class="btn btn-s btn-sm" onclick="clearDashFullSearch()"><i class="fa-solid fa-xmark"></i> Clear</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Emp No</th><th>Name</th><th>Designation</th>
+              <th>NIC</th><th>Card No</th><th>Type</th>
+              <th>SC Issue</th><th>SC Expiry</th><th>SC Status</th>
+              <th>PR Issue</th><th>PR Expiry</th><th>PR Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dash-full-tbody">
+            <tr><td colspan="14" class="tbl-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EMPLOYEES ══ -->
+  <div class="page" id="page-employees">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Employees</div>
+        <div class="page-sub">All employee records</div>
+      </div>
+      <button class="btn btn-g" onclick="exportEmpCSV()"><i class="fa-solid fa-download"></i> Export CSV</button>
+    </div>
+    <div class="fb-note">
+      <i class="fa-solid fa-fire"></i>
+      Every <strong>new</strong> save uses <strong>push()</strong> — edits update the existing record in place.
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-user-plus" style="color:var(--ac)"></i> Add Employee</div>
+        <span class="chip chip-ac" id="emp-form-label">New Record</span>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Emp No <span style="color:var(--t3);font-size:.48rem">(auto if blank)</span></label>
+          <input id="e-empno" placeholder="Auto-generated">
+        </div>
+        <div class="field">
+          <label>Full Name</label>
+          <input id="e-name" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label>ID No / NIC</label>
+          <input id="e-nic" placeholder="XXXXXXXXX">
+        </div>
+        <div class="field span2">
+          <label>Address</label>
+          <input id="e-addr" placeholder="Full address">
+        </div>
+        <div class="field">
+          <label>Designation</label>
+          <input id="e-desig" placeholder="Job title">
+        </div>
+        <div class="field">
+          <label>Join Date</label>
+          <input id="e-join" type="date">
+        </div>
+        <div class="field">
+          <label>Basic Salary (LKR)</label>
+          <input id="e-sal" type="number" placeholder="0.00">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="saveEmployee()"><i class="fa-solid fa-floppy-disk"></i> Save Employee</button>
+        <button class="btn btn-s" onclick="clearEmpForm()"><i class="fa-solid fa-xmark"></i> Clear</button>
+      </div>
+    </div>
+
+    <!-- Search for employee list -->
+    <div class="card" style="padding:12px 14px">
+      <div class="search-bar-wrap">
+        <div class="search-field">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="emp-search" placeholder="Search employees by name, NIC, designation…" oninput="renderEmployeeTable()">
+        </div>
+        <select class="search-filter" id="emp-filter-desig" onchange="renderEmployeeTable()">
+          <option value="">All Designations</option>
+        </select>
+        <button class="btn btn-s btn-sm" onclick="clearEmpSearch()">
+          <i class="fa-solid fa-xmark"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-list" style="color:var(--ac)"></i> Employee List</div>
+        <span class="chip chip-ac" id="emp-count-chip">0 records</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Emp No</th><th>Name</th><th>NIC</th>
+              <th>Designation</th><th>Join Date</th><th>Salary (LKR)</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="emp-tbody">
+            <tr><td colspan="8" class="tbl-empty">No employees yet — add one above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SAFETY & POLICE ══ -->
+  <div class="page" id="page-safety">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Safety &amp; Police</div>
+        <div class="page-sub">Compliance tracking</div>
+      </div>
+      <button class="btn btn-g" onclick="exportSFCSV()"><i class="fa-solid fa-download"></i> Export CSV</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-shield-halved" style="color:var(--ac)"></i> Add / Edit Record</div>
+        <span class="chip chip-ac" id="sf-form-label">New Record</span>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Employee</label>
+          <select id="sf-emp" onchange="onSFEmpChange()">
+            <option value="">Select employee…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>NIC (auto-fill)</label>
+          <input id="sf-nic" placeholder="Auto" readonly>
+        </div>
+        <div class="field">
+          <label>Card No</label>
+          <input id="sf-card" placeholder="SC-XXXX">
+        </div>
+        <div class="field">
+          <label>Employment Type</label>
+          <select id="sf-type" onchange="calcExpiry()">
+            <option value="">Select…</option>
+            <option value="Temporary">Temporary</option>
+            <option value="Annual">Annual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>
+            SC Issue Date
+            <span id="sc-expiry-hint" style="color:var(--ac);font-size:.5rem">→ select type first</span>
+          </label>
+          <input id="sf-sci" type="date" oninput="calcExpiry()">
+        </div>
+        <div class="field">
+          <label id="sf-sce-label">SC Expiry (auto)</label>
+          <input id="sf-sce" type="date" readonly>
+        </div>
+        <div class="field">
+          <label>PR Issue Date <span style="color:var(--pu);font-size:.5rem">→ auto +3yr</span></label>
+          <input id="sf-pri" type="date" oninput="calcExpiry()">
+        </div>
+        <div class="field">
+          <label>PR Expiry (auto)</label>
+          <input id="sf-pre" type="date" readonly>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="saveSF()"><i class="fa-solid fa-floppy-disk"></i> Save Record</button>
+        <button class="btn btn-s" onclick="clearSFForm()"><i class="fa-solid fa-xmark"></i> Clear</button>
+      </div>
+    </div>
+
+    <!-- Search for safety list -->
+    <div class="card" style="padding:12px 14px">
+      <div class="search-bar-wrap">
+        <div class="search-field">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="sf-search" placeholder="Search by name, NIC, card number…" oninput="renderSFTable()">
+        </div>
+        <select class="search-filter" id="sf-filter-type" onchange="renderSFTable()">
+          <option value="">All Types</option>
+          <option value="Temporary">Temporary</option>
+          <option value="Annual">Annual</option>
+        </select>
+        <select class="search-filter" id="sf-filter-status" onchange="renderSFTable()">
+          <option value="">All Statuses</option>
+          <option value="exp">Has Expired</option>
+          <option value="wrn">Expiring Soon</option>
+          <option value="ok">All Valid</option>
+        </select>
+        <button class="btn btn-s btn-sm" onclick="clearSFSearch()">
+          <i class="fa-solid fa-xmark"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-table-list" style="color:var(--ac)"></i> Compliance List</div>
+        <span class="chip chip-ac" id="sf-count-chip">0 records</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>NIC</th><th>Card No</th><th>Type</th>
+              <th>SC Issue</th><th>SC Expiry</th><th>SC Status</th>
+              <th>PR Issue</th><th>PR Expiry</th><th>PR Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sf-tbody">
+            <tr><td colspan="12" class="tbl-empty">No records yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REPORTS ══ -->
+  <div class="page" id="page-reports">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Reports</div>
+        <div class="page-sub">Full compliance summary</div>
+      </div>
+      <button class="btn btn-g" onclick="exportExcel()"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-ico ico-gn"><i class="fa-solid fa-users"></i></div><div class="stat-lbl">Total Employees</div><div class="stat-val" id="r-total">0</div></div>
+      <div class="stat-card"><div class="stat-ico ico-bl"><i class="fa-solid fa-id-card"></i></div><div class="stat-lbl">Safety Records</div><div class="stat-val" id="r-safety">0</div></div>
+      <div class="stat-card"><div class="stat-ico ico-or"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="stat-lbl">Expiring Soon</div><div class="stat-val" id="r-expiring">0</div></div>
+      <div class="stat-card"><div class="stat-ico ico-rd"><i class="fa-solid fa-circle-xmark"></i></div><div class="stat-lbl">Expired</div><div class="stat-val" id="r-expired">0</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--wn)"></i> Status Alerts <span class="chip chip-ac" id="r-alert-chip" style="margin-left:2px">0</span></div>
+        <button class="btn btn-w btn-sm" onclick="exportAlertsCSV()"><i class="fa-solid fa-download"></i> Export</button>
+      </div>
+      <div id="r-alerts-wrap">
+        <div class="empty-state"><div class="empty-ico"><i class="fa-solid fa-circle-check"></i></div>All documents valid</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-table" style="color:var(--ac)"></i> Full Summary</div>
+        <span class="chip chip-ac">All data</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Emp No</th><th>Name</th><th>Designation</th><th>Type</th>
+              <th>SC Issue</th><th>SC Expiry</th><th>SC Status</th>
+              <th>PR Issue</th><th>PR Expiry</th><th>PR Status</th>
+            </tr>
+          </thead>
+          <tbody id="r-tbody"><tr><td colspan="11" class="tbl-empty">No data</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ADMIN PANEL ══ -->
+  <div class="page" id="page-admin">
+    <div class="page-header">
+      <div>
+        <div class="page-title">User Approvals <span class="admin-badge"><i class="fa-solid fa-shield"></i> Admin</span></div>
+        <div class="page-sub">Link each login name to an official report name, then approve</div>
+      </div>
+    </div>
+
+    <!-- FCM Setup card -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-bell" style="color:var(--ac)"></i> Push Notifications Setup</div>
+        <span class="chip chip-ac">FCM</span>
+      </div>
+      <div style="font-size:.74rem;color:var(--t2);line-height:1.6;margin-bottom:12px">
+        Paste your <strong>FCM Server Key</strong> to enable phone push notifications.<br>
+        <span style="color:var(--t3);font-size:.65rem">Firebase Console → Project Settings → Cloud Messaging → Server Key.</span>
+      </div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label>FCM Server Key</label>
+          <input id="admin-fcm-key" placeholder="AAAA…:APA91b…" oninput="saveFCMKey()">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="testNotification()"><i class="fa-solid fa-paper-plane"></i> Send Test Notification</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-user-clock" style="color:var(--wn)"></i> Pending Approvals</div>
+        <span class="chip chip-wn" id="pending-count-chip">0 pending</span>
+      </div>
+      <div style="font-size:.7rem;color:var(--t2);margin-bottom:10px;line-height:1.5">
+        <i class="fa-solid fa-circle-info" style="color:var(--ac);margin-right:4px"></i>
+        For each pending user, select their <strong>official name</strong> from the dropdown (must match the name in your employee/safety records), then click <strong>Link &amp; Approve</strong>.
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Login Name</th><th>Registered</th><th>Link to Official Name</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="pending-tbody">
+            <tr><td colspan="6" class="tbl-empty">No pending approvals.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="fa-solid fa-users-gear" style="color:var(--ok)"></i> Approved Users</div>
+        <span class="chip chip-ok" id="approved-count-chip">0 users</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Login Name</th><th>Linked Official Name</th><th>Approved On</th><th>Last Login</th><th>FCM Token</th><th>Action</th></tr>
+          </thead>
+          <tbody id="approved-tbody">
+            <tr><td colspan="7" class="tbl-empty">No approved users yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- User menu modal -->
+<div class="modal-bg" id="user-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="user-modal-name">—</div>
+    <div class="modal-body" id="user-modal-role">—</div>
+    <div class="btn-row">
+      <button class="btn btn-d" onclick="signOut()"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+      <button class="btn btn-s" onclick="closeUserModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="del-modal">
+  <div class="modal-box">
+    <div class="modal-title"><i class="fa-solid fa-trash-can" style="color:var(--dn);margin-right:6px"></i>Confirm Delete</div>
+    <div class="modal-body">This action cannot be undone. The record will be permanently removed from Firebase.</div>
+    <div class="btn-row">
+      <button class="btn btn-d" id="del-confirm-btn">Delete Permanently</button>
+      <button class="btn btn-s" onclick="closeDelModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyDj33YYTQPNKw_gDwjYv4eWVZgo6uW29o4",
+  authDomain:        "pavara-doc-system.firebaseapp.com",
+  databaseURL:       "https://pavara-doc-system-default-rtdb.firebaseio.com",
+  projectId:         "pavara-doc-system",
+  storageBucket:     "pavara-doc-system.firebasestorage.app",
+  messagingSenderId: "786092431378",
+  appId:             "1:786092431378:web:a07c0a9756e011a95520cb",
+  measurementId:     "G-P7C0KKDN65"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ════════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ════════════════════════════════════════════════════════
+const ADMIN_PASSPHRASE = 'PavaraAdmin2025!';
+let allEmployees  = [];
+let allSFRecords  = [];
+let allUsers      = {};
+let editingEmpKey = null;
+let editingSFKey  = null;
+let pendingDeleteFn = null;
+let currentUser   = null;
+let fcmServerKey  = '';
+
+// ════════════════════════════════════════════════════════
+//  ROLE GUARD HELPER
+//  Call isAdmin() at the top of any write/export function
+// ════════════════════════════════════════════════════════
+function isAdmin() {
+  return currentUser && currentUser.role === 'admin';
+}
+function requireAdmin(label) {
+  if (!isAdmin()) {
+    showToast((label || 'This action') + ' requires Admin access', 'er');
+    return false;
+  }
+  return true;
+}
+
+// ════════════════════════════════════════════════════════
+//  AUTH HELPERS
+// ════════════════════════════════════════════════════════
+function hashPin(pin) {
+  let h = 0;
+  for (let i = 0; i < pin.length; i++) {
+    h = ((h << 5) - h) + pin.charCodeAt(i);
+    h |= 0;
+  }
+  return 'p' + Math.abs(h).toString(36);
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('tab-emp').classList.toggle('active', tab === 'emp');
+  document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
+  document.getElementById('auth-emp-fields').style.display   = tab === 'emp'   ? '' : 'none';
+  document.getElementById('auth-admin-fields').style.display = tab === 'admin' ? '' : 'none';
+  hideAuthMessages();
+}
+
+function hideAuthMessages() {
+  document.getElementById('auth-err').style.display     = 'none';
+  document.getElementById('auth-pending').style.display = 'none';
+}
+
+function showAuthErr(msg) {
+  const el = document.getElementById('auth-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('auth-pending').style.display = 'none';
+}
+
+function handleLogin() {
+  hideAuthMessages();
+
+  const btn = document.getElementById('auth-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+  const restore = () => { if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; } };
+
+  const isAdminTab = document.getElementById('tab-admin').classList.contains('active');
+
+  // ── ADMIN LOGIN ──
+  if (isAdminTab) {
+    const pass = (document.getElementById('login-admin-pass') || {}).value || '';
+    if (pass.trim() === ADMIN_PASSPHRASE) {
+      currentUser = { name: 'Admin', role: 'admin', key: '_admin' };
+      restore();
+      completeLogin();
+    } else {
+      restore();
+      showAuthErr('Incorrect admin passphrase.');
+    }
+    return;
+  }
+
+  // ── EMPLOYEE LOGIN ──
+  const nameRaw = (document.getElementById('login-name') || {}).value || '';
+  const pin     = (document.getElementById('login-pin')  || {}).value || '';
+  const name    = nameRaw.trim();
+
+  if (!name) { restore(); showAuthErr('Please enter your registered name.'); return; }
+  if (!pin || pin.replace(/\s/g,'').length < 4) { restore(); showAuthErr('PIN must be at least 4 digits.'); return; }
+
+  const pinHash = hashPin(pin.trim());
+
+  db.ref('users').once('value').then(snap => {
+    let userKey = null, userData = null;
+
+    if (snap.exists()) {
+      snap.forEach(child => {
+        const u = child.val();
+        if ((u.nameLower || '').trim() === name.toLowerCase() ||
+            (u.name     || '').trim().toLowerCase() === name.toLowerCase()) {
+          userKey  = child.key;
+          userData = u;
+        }
+      });
+    }
+
+    // ── NEW USER: register as pending ──
+    if (!userKey) {
+      db.ref('users').push({
+        name,
+        nameLower: name.toLowerCase(),
+        pinHash,
+        status: 'pending',
+        registeredAt: new Date().toISOString(),
+        lastLogin: null,
+        fcmToken: null
+      }).then(() => {
+        restore();
+        document.getElementById('auth-pending').style.display = 'block';
+      }).catch(err => {
+        restore();
+        showAuthErr('Registration failed: ' + err.message);
+      });
+      return;
+    }
+
+    // ── EXISTING USER: check PIN ──
+    if (userData.pinHash !== pinHash) {
+      restore();
+      showAuthErr('Incorrect PIN. Try again.');
+      return;
+    }
+
+    if (userData.status === 'pending') {
+      restore();
+      document.getElementById('auth-pending').style.display = 'block';
+      return;
+    }
+
+    // ── REJECTED: allow re-registration ──
+    // Instead of permanently blocking, reset them to pending so Admin gets a new approval request.
+    if (userData.status === 'rejected') {
+      db.ref('users/' + userKey).update({
+        status:       'pending',
+        pinHash,                          // update PIN in case they changed it
+        registeredAt: new Date().toISOString(),
+        linkedOfficialName: null,
+        lastLogin:    null
+      }).then(() => {
+        restore();
+        document.getElementById('auth-pending').style.display = 'block';
+      }).catch(err => {
+        restore();
+        showAuthErr('Re-registration failed: ' + err.message);
+      });
+      return;
+    }
+
+    // ── APPROVED: log in ──
+    currentUser = {
+      loginName:    userData.name,
+      officialName: userData.linkedOfficialName || userData.name,
+      name:         userData.name,
+      role: 'employee',
+      key: userKey
+    };
+    db.ref('users/' + userKey).update({ lastLogin: new Date().toISOString() });
+    restore();
+    completeLogin();
+
+  }).catch(err => {
+    restore();
+    showAuthErr('Connection error: ' + err.message + '. Check your internet.');
+  });
+}
+
+function completeLogin() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-content').style.display = '';
+
+  // Show user pill
+  const pill   = document.getElementById('user-pill');
+  const avatar = document.getElementById('user-avatar');
+  const namePl = document.getElementById('user-name-pill');
+  if (pill) pill.style.display = '';
+  const displayName = currentUser.loginName || currentUser.name || 'User';
+  if (avatar) avatar.textContent = displayName.charAt(0).toUpperCase();
+  if (namePl) {
+    namePl.textContent = displayName;
+    const offName = currentUser.officialName || '';
+    if (offName && offName !== displayName) {
+      pill.title = 'Official: ' + offName;
+    }
+  }
+
+  if (isAdmin()) {
+    // ── ADMIN: reveal all admin-only nav items ──
+    // Must set display explicitly — removeProperty() cannot override !important CSS
+    const sec = document.getElementById('admin-nav-sec');
+    if (sec) sec.style.display = '';
+    document.querySelectorAll('.admin-only-nav').forEach(el => {
+      // nav-sec and nav-item are block elements; the full table card is also block
+      el.style.setProperty('display', 'block', 'important');
+    });
+  } else {
+    // ── EMPLOYEE: dashboard only, no nav for other pages ──
+    // admin-only-nav items remain hidden (CSS default + no override here)
+    showPage('dashboard');
+  }
+
+  requestNotificationPermission();
+  scheduleDailyNotificationCheck();
+
+  // ── Force a full re-render now that currentUser is set ──
+  // Firebase listeners may have already received data before login;
+  // we must re-render so isAdmin() evaluates correctly for all UI.
+  refreshAllAfterLogin();
+}
+
+// Called once after login to fetch fresh data and render everything with the correct role
+function refreshAllAfterLogin() {
+  // Explicitly re-fetch both collections so we are never dependent on
+  // whether the background .on() listener already fired before login.
+  // This guarantees Admin always sees data immediately on login.
+  const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+
+  Promise.all([
+    db.ref('employees').once('value'),
+    db.ref('safetyRecords').once('value')
+  ]).then(([empSnap, sfSnap]) => {
+    // Rebuild local arrays from fresh Firebase data
+    allEmployees = [];
+    if (empSnap.exists()) {
+      empSnap.forEach(child => { allEmployees.push({ _key: child.key, ...child.val() }); });
+    }
+    allSFRecords = [];
+    if (sfSnap.exists()) {
+      sfSnap.forEach(child => { allSFRecords.push({ _key: child.key, ...child.val() }); });
+    }
+
+    // Update all stat counters
+    setText('s-total',  allEmployees.length);
+    setText('r-total',  allEmployees.length);
+    setText('s-safety', allSFRecords.length);
+    setText('r-safety', allSFRecords.length);
+
+    // Re-render everything now that currentUser + data are both ready
+    refreshEmpDropdown();
+    renderTables();
+    renderAdminPanel();
+    refreshDash();
+    if (isAdmin()) renderReports();
+
+    if (!isAdmin()) checkAndNotifyCurrentUser();
+  }).catch(err => {
+    console.error('Data fetch failed:', err);
+    showToast('Data load error: ' + err.message, 'er');
+  });
+}
+
+function signOut() {
+  currentUser = null;
+  closeUserModal();
+  // Reset admin-only nav to hidden for next login
+  document.querySelectorAll('.admin-only-nav').forEach(el => {
+    el.style.removeProperty('display');
+  });
+  document.getElementById('admin-nav-sec').style.display = 'none';
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('auth-screen').style.display  = '';
+  document.getElementById('login-pin').value = '';
+  document.getElementById('login-name').value = '';
+  hideAuthMessages();
+}
+
+function showUserMenu() {
+  const m = document.getElementById('user-modal');
+  const displayName = currentUser.loginName || currentUser.name || 'User';
+  document.getElementById('user-modal-name').textContent = displayName;
+  if (isAdmin()) {
+    document.getElementById('user-modal-role').textContent = '🛡 Administrator';
+  } else {
+    const offName = currentUser.officialName || '';
+    document.getElementById('user-modal-role').innerHTML =
+      '👤 Employee' + (offName && offName !== displayName
+        ? '<br><span style="font-size:.65rem;color:var(--t3)">Official: <strong style="color:var(--ac)">' + offName + '</strong></span>'
+        : '');
+  }
+  m.classList.add('show');
+}
+function closeUserModal() {
+  document.getElementById('user-modal').classList.remove('show');
+}
+
+// ════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+//  SERVICE WORKER + WEB PUSH  — Full PWA Notification System
+//  Works on Android Chrome PWA (lock screen / notification bar)
+//  even when the app is closed.
+// ════════════════════════════════════════════════════════
+
+// ── VAPID public key (generate your own at https://vapidkeys.com
+//    or via: npx web-push generate-vapid-keys)
+//    Replace this with YOUR actual VAPID public key from Firebase Console
+//    Project Settings → Cloud Messaging → Web Push certificates → Key pair
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDkBnE2BmYgH93lJKoJTr7T2uBFB5j-3Qr3oPm2Nt0rs';
+// ↑ IMPORTANT: Replace with your own VAPID public key from Firebase Console
+
+let swRegistration = null;   // holds the active ServiceWorkerRegistration
+let pushSubscription = null; // holds the PushSubscription for this browser/device
+
+// ────────────────────────────────────────────────────────
+//  SW REGISTRATION — runs once on page load
+// ────────────────────────────────────────────────────────
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    console.warn('[Push] Service workers not supported');
+    return;
+  }
+  try {
+    swRegistration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+    console.log('[Push] SW registered, scope:', swRegistration.scope);
+
+    // Listen for SW updates — silently activate new SW
+    swRegistration.addEventListener('updatefound', () => {
+      const newWorker = swRegistration.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New SW waiting — send SKIP_WAITING so it activates immediately
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      }
+    });
+
+    // Check for first install — show welcome notification
+    const isFirstInstall = !localStorage.getItem('pavara_sw_installed');
+    if (isFirstInstall && swRegistration.active) {
+      localStorage.setItem('pavara_sw_installed', '1');
+      // Slight delay to let everything settle
+      setTimeout(() => showSystemNotification(
+        '✅ Pavara Payroll Installed',
+        'App installed successfully. You will receive document expiry alerts here.',
+        'install'
+      ), 2500);
+    }
+  } catch (err) {
+    console.warn('[Push] SW registration failed:', err);
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  REQUEST PERMISSION + SUBSCRIBE TO WEB PUSH
+//  Called right after login. Gets a PushSubscription and
+//  saves it to Firebase under users/<key>/pushSubscription
+// ────────────────────────────────────────────────────────
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (!swRegistration) {
+    // SW not ready yet — wait for it
+    try {
+      swRegistration = await navigator.serviceWorker.ready;
+    } catch (e) { return; }
+  }
+
+  let permission = Notification.permission;
+
+  // Ask if not yet decided
+  if (permission === 'default') {
+    try {
+      permission = await Notification.requestPermission();
+    } catch (e) {
+      permission = await new Promise(res => Notification.requestPermission(res));
+    }
+  }
+
+  if (permission !== 'granted') {
+    console.warn('[Push] Notification permission denied');
+    return;
+  }
+
+  // Subscribe to Web Push
+  try {
+    pushSubscription = await swRegistration.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    console.log('[Push] Subscribed:', pushSubscription.endpoint);
+
+    // Save subscription to Firebase (only for employees, not admin)
+    if (currentUser && currentUser.key && currentUser.key !== '_admin') {
+      const subJson = JSON.stringify(pushSubscription.toJSON());
+      await db.ref('users/' + currentUser.key).update({
+        pushSubscription: subJson,
+        pushEndpoint:     pushSubscription.endpoint,
+        notifGranted:     true
+      });
+
+      // Also tell the SW who this user is (for background checks)
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type:         'STORE_USER',
+          userKey:      currentUser.key,
+          officialName: currentUser.officialName || currentUser.name || ''
+        });
+      }
+    }
+
+    // Register Periodic Background Sync if supported
+    registerPeriodicSync();
+
+  } catch (err) {
+    console.warn('[Push] Push subscription failed:', err.message);
+    // Fallback: still show in-app notifications
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  PERIODIC BACKGROUND SYNC — daily check even when closed
+// ────────────────────────────────────────────────────────
+async function registerPeriodicSync() {
+  try {
+    if (!('periodicSync' in swRegistration)) return;
+    const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+    if (status.state === 'granted') {
+      await swRegistration.periodicSync.register('pavara-expiry-check', {
+        minInterval: 24 * 60 * 60 * 1000  // once per day minimum
+      });
+      console.log('[Push] Periodic background sync registered');
+    }
+  } catch (e) {
+    console.warn('[Push] Periodic sync not available:', e.message);
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  SHOW SYSTEM NOTIFICATION via SW (works in background)
+//  This is the ONLY way to get lock-screen notifications on Android PWA.
+//  Falls back to Notification API if SW is not ready.
+// ────────────────────────────────────────────────────────
+async function showSystemNotification(title, body, tag) {
+  const notifTag = tag || ('pavara-' + Date.now());
+
+  // Preferred: use SW registration.showNotification()
+  // This appears in the system notification bar even if the app is minimised
+  if (swRegistration) {
+    try {
+      await swRegistration.showNotification(title, {
+        body,
+        tag:               notifTag,
+        renotify:          true,
+        icon:              './icons/icon-192.png',
+        badge:             './icons/badge-72.png',
+        vibrate:           [200, 100, 200, 100, 200],
+        requireInteraction: false,
+        silent:            false,
+        data:              { url: './', type: tag || 'alert' },
+        actions: [
+          { action: 'open',    title: '📋 Open App' },
+          { action: 'dismiss', title: 'Dismiss'     }
+        ]
+      });
+      return;
+    } catch (e) {
+      console.warn('[Push] SW showNotification failed, falling back:', e.message);
+    }
+  }
+
+  // Fallback: basic browser Notification (foreground only)
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      new Notification(title, { body, tag: notifTag, icon: './icons/icon-192.png' });
+    } catch (e) {}
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  SEND WEB PUSH TO A SPECIFIC USER VIA FIREBASE FUNCTION
+//  Stores a push job in Firebase; your backend/Cloud Function
+//  reads it and sends the actual Web Push or FCM message.
+//
+//  If you have no backend, this also attempts the legacy
+//  FCM v1 HTTP API if an fcmServerKey is saved.
+// ────────────────────────────────────────────────────────
+async function sendPushToUser(loginName, title, body) {
+  try {
+    // Write a push-job to Firebase that a Cloud Function can pick up
+    // (optional — works automatically if you deploy the Cloud Function below)
+    db.ref('pushJobs').push({
+      loginName, title, body,
+      createdAt: new Date().toISOString(),
+      status:    'pending'
+    });
+
+    // ── LEGACY FCM fallback (if fcmServerKey is set) ──
+    if (!fcmServerKey) {
+      const snap = await db.ref('adminSettings/fcmServerKey').once('value');
+      fcmServerKey = snap.val() || '';
+    }
+    if (!fcmServerKey) return;
+
+    const snap = await db.ref('users').once('value');
+    if (!snap.exists()) return;
+    let token = null;
+    snap.forEach(child => {
+      const u = child.val();
+      if ((u.name||'').toLowerCase() === loginName.toLowerCase() && u.fcmToken) {
+        token = u.fcmToken;
+      }
+    });
+    if (!token) return;
+
+    await fetch('https://fcm.googleapis.com/fcm/send', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'key=' + fcmServerKey },
+      body:    JSON.stringify({
+        to:           token,
+        notification: { title, body, sound: 'default', badge: '1' },
+        priority:     'high',
+        data:         { type: 'alert', url: './' }
+      })
+    });
+  } catch (e) { console.warn('[Push] sendPushToUser skipped:', e.message); }
+}
+
+// ────────────────────────────────────────────────────────
+//  SHOW LOCAL (in-app) NOTIFICATION — calls SW showNotification
+// ────────────────────────────────────────────────────────
+function showLocalNotification(title, body) {
+  showSystemNotification(title, body, 'pavara-local-' + Date.now());
+}
+
+// ────────────────────────────────────────────────────────
+//  DAILY EXPIRY CHECK — triggered on login, once per day
+// ────────────────────────────────────────────────────────
+function scheduleDailyNotificationCheck() {
+  try {
+    if (!currentUser || isAdmin()) return;
+    const today = new Date().toISOString().split('T')[0];
+    const key   = 'pv_notif_' + currentUser.key + '_' + today;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+    // Small delay so SF data is fully loaded
+    setTimeout(checkAndNotifyCurrentUser, 3000);
+  } catch(e) {}
+}
+
+function checkAndNotifyCurrentUser() {
+  try {
+    if (!currentUser || isAdmin()) return;
+    const lookupName = (currentUser.officialName || currentUser.name || '').toLowerCase();
+    const sf = allSFRecords.find(x => (x.name||'').toLowerCase() === lookupName);
+    if (!sf) return;
+
+    const msgs = [];
+    const sce = scExpiry(sf), scD = daysUntil(sce);
+    if (scD !== null) {
+      if (scD < 0)        msgs.push('Safety Card expired ' + Math.abs(scD) + ' days ago!');
+      else if (scD <= 30) msgs.push('Safety Card expires in ' + scD + ' days.');
+    }
+    const pre = prExpiry(sf), prD = daysUntil(pre);
+    if (prD !== null) {
+      if (prD < 0)         msgs.push('Police Report expired ' + Math.abs(prD) + ' days ago!');
+      else if (prD <= 365) msgs.push('Police Report expires in ' + prD + ' days.');
+    }
+    if (!msgs.length) return;
+
+    const bodyText = msgs.join(' · ');
+
+    // Use SW showNotification — appears in the system notification bar
+    showSystemNotification('⚠️ Pavara — Document Alert', bodyText, 'pavara-expiry');
+
+    // Also post to SW for background delivery if app closes
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type:         'BACKGROUND_CHECK',
+        userKey:      currentUser.key,
+        officialName: currentUser.officialName || currentUser.name || ''
+      });
+    }
+
+    db.ref('notifications').push({
+      loginName: currentUser.loginName || currentUser.name,
+      officialName: currentUser.officialName || '',
+      title: 'Document Alert',
+      body: bodyText, type: 'expiry',
+      sentAt: new Date().toISOString(), read: false
+    });
+  } catch(e) {}
+}
+
+// ────────────────────────────────────────────────────────
+//  TEST NOTIFICATION (Admin button)
+// ────────────────────────────────────────────────────────
+async function testNotification() {
+  if (!requireAdmin('Send test notifications')) return;
+  try {
+    // Show a system notification immediately on this device
+    await showSystemNotification(
+      '🔔 Pavara — Test Notification',
+      'Push notifications are working! Your device will receive alerts.',
+      'pavara-test'
+    );
+    showToast('Test notification sent to this device', 'ok');
+
+    // Also send FCM push to all approved users
+    const snap = await db.ref('users').once('value');
+    if (!snap.exists()) return;
+    let sent = 0;
+    snap.forEach(child => {
+      const u = child.val();
+      if (u.status === 'approved') {
+        sendPushToUser(u.name, '🔔 Pavara Test', 'Push notifications are working!');
+        sent++;
+      }
+    });
+    if (sent > 0) showToast('Push job queued for ' + sent + ' user(s)', 'nf');
+  } catch(e) { showToast('Test failed: ' + e.message, 'er'); }
+}
+
+// ────────────────────────────────────────────────────────
+//  HELPER — convert VAPID key from base64url to Uint8Array
+// ────────────────────────────────────────────────────────
+function urlBase64ToUint8Array(base64String) {
+  const padding  = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64   = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData  = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+// ── Register SW immediately on page load ──
+registerServiceWorker();
+
+async function notifyUserOfRecordUpdate(officialName) {
+  try {
+    const title = '📋 Pavara — Your Record Was Updated';
+    const body  = 'Admin has updated your Safety/Police record. Please check the dashboard.';
+
+    let loginName = null;
+    const snap = await db.ref('users').once('value');
+    if (snap.exists()) {
+      snap.forEach(child => {
+        const u = child.val();
+        if (u.status === 'approved' &&
+            (u.linkedOfficialName || '').toLowerCase() === officialName.toLowerCase()) {
+          loginName = u.name;
+        }
+      });
+    }
+
+    db.ref('notifications').push({
+      loginName: loginName || officialName,
+      officialName,
+      title, body, type: 'admin_update',
+      sentAt: new Date().toISOString(), read: false
+    });
+
+    if (loginName) {
+      sendPushToUser(loginName, title, body);
+    }
+
+    // If the affected user is currently logged in, show immediately
+    if (currentUser && (currentUser.officialName || '').toLowerCase() === officialName.toLowerCase()) {
+      showSystemNotification(title, body, 'pavara-record-update');
+    }
+  } catch(e) {}
+}
+
+function saveFCMKey() {
+  if (!requireAdmin('Save FCM key')) return;
+  try {
+    const v = (document.getElementById('admin-fcm-key') || {}).value.trim();
+    if (v) { fcmServerKey = v; db.ref('adminSettings/fcmServerKey').set(v); showToast('FCM key saved', 'ok'); }
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════
+//  ADMIN: USER APPROVAL
+// ════════════════════════════════════════════════════════
+db.ref('users').on('value', snap => {
+  allUsers = {};
+  if (snap.exists()) snap.forEach(c => { allUsers[c.key] = c.val(); });
+  // Only update the admin panel UI if someone is logged in — prevents errors
+  // when this listener fires at page load before any user has authenticated.
+  if (currentUser) renderAdminPanel();
+  updatePendingBadge();
+});
+
+db.ref('adminSettings').once('value', snap => {
+  if (!snap.exists()) return;
+  const d = snap.val();
+  if (d.fcmServerKey) {
+    fcmServerKey = d.fcmServerKey;
+    const el = document.getElementById('admin-fcm-key');
+    if (el) el.value = d.fcmServerKey;
+  }
+});
+
+function updatePendingBadge() {
+  const pending = Object.values(allUsers).filter(u => u.status === 'pending').length;
+  const b = document.getElementById('pending-badge');
+  if (b) { b.style.display = pending ? '' : 'none'; b.textContent = pending; }
+}
+
+function approveUser(key) {
+  if (!requireAdmin('Approve users')) return;
+  const sel = document.getElementById('link-select-' + key);
+  const linkedOfficialName = sel ? sel.value.trim() : '';
+
+  if (!linkedOfficialName) {
+    showToast('Please select an official name to link first', 'er');
+    return;
+  }
+
+  db.ref('users/' + key).update({
+    status: 'approved',
+    linkedOfficialName,
+    approvedAt: new Date().toISOString()
+  }, err => {
+    if (err) { showToast('Failed: ' + err.message, 'er'); return; }
+    const u = allUsers[key];
+    showToast((u ? u.name : 'User') + ' approved & linked to ' + linkedOfficialName + ' ✓', 'ok');
+    sendPushToUser(u ? u.name : '', '✅ Pavara — You are Approved!',
+      'Your account has been approved. You can now log in freely every day.');
+    db.ref('notifications').push({
+      loginName: u ? u.name : '',
+      officialName: linkedOfficialName,
+      title: 'Account Approved',
+      body: 'Admin has approved and linked your account.',
+      type: 'approval', sentAt: new Date().toISOString(), read: false
+    });
+  });
+}
+
+function relinkUser(key) {
+  if (!requireAdmin('Re-link users')) return;
+  const sel = document.getElementById('relink-select-' + key);
+  const linkedOfficialName = sel ? sel.value.trim() : '';
+  if (!linkedOfficialName) { showToast('Select a name to re-link', 'er'); return; }
+  db.ref('users/' + key).update({ linkedOfficialName }, err => {
+    if (!err) showToast('Re-linked to ' + linkedOfficialName, 'ok');
+  });
+}
+
+function rejectUser(key) {
+  if (!requireAdmin('Reject users')) return;
+  const u = allUsers[key];
+  db.ref('users/' + key).update({ status: 'rejected' }, err => {
+    if (!err) showToast((u ? u.name : 'User') + ' rejected — they can re-register to request access again', 'nf');
+  });
+}
+
+function revokeUser(key) {
+  if (!requireAdmin('Revoke users')) return;
+  const u = allUsers[key];
+  openDelModal(() => {
+    db.ref('users/' + key).remove(err => {
+      if (!err) showToast((u ? u.name : 'User') + ' removed — they can log in again to send a new access request', 'nf');
+    });
+  });
+}
+
+function getAllOfficialNames() {
+  const names = new Set();
+  allEmployees.forEach(e => { if (e.name) names.add(e.name); });
+  allSFRecords.forEach(s => { if (s.name) names.add(s.name); });
+  return [...names].sort();
+}
+
+function renderAdminPanel() {
+  const pending  = Object.entries(allUsers).filter(([, u]) => u.status === 'pending');
+  const approved = Object.entries(allUsers).filter(([, u]) => u.status === 'approved');
+  const officialNames = getAllOfficialNames();
+
+  const nameOpts = '<option value="">— Select official name —</option>' +
+    officialNames.map(n => `<option value="${n}">${n}</option>`).join('');
+
+  const pc = document.getElementById('pending-count-chip');
+  if (pc) pc.textContent = pending.length + ' pending';
+  const ac2 = document.getElementById('approved-count-chip');
+  if (ac2) ac2.textContent = approved.length + ' users';
+
+  const ptbody = document.getElementById('pending-tbody');
+  if (ptbody) {
+    if (!pending.length) {
+      ptbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No pending approvals.</td></tr>';
+    } else {
+      ptbody.innerHTML = pending.map(([key, u], i) => `
+        <tr class="pending-row">
+          <td class="mono">${i+1}</td>
+          <td><strong>${u.name}</strong></td>
+          <td class="mono" style="font-size:.65rem;color:var(--t3)">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB') : '—'}</td>
+          <td>
+            <select class="link-select" id="link-select-${key}">
+              ${nameOpts}
+            </select>
+          </td>
+          <td><span class="badge b-wn">Pending</span></td>
+          <td>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn btn-g btn-sm" onclick="approveUser('${key}')">
+                <i class="fa-solid fa-link"></i> Link &amp; Approve
+              </button>
+              <button class="btn btn-d btn-sm" onclick="rejectUser('${key}')">
+                <i class="fa-solid fa-xmark"></i> Reject
+              </button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+  }
+
+  const atbody = document.getElementById('approved-tbody');
+  if (atbody) {
+    if (!approved.length) {
+      atbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No approved users yet.</td></tr>';
+    } else {
+      atbody.innerHTML = approved.map(([key, u], i) => `
+        <tr>
+          <td class="mono">${i+1}</td>
+          <td><strong>${u.name}</strong></td>
+          <td>
+            ${u.linkedOfficialName
+              ? `<span class="linked-name-badge"><i class="fa-solid fa-link"></i>${u.linkedOfficialName}</span>`
+              : '<span class="badge b-wn">Not linked</span>'}
+            <select class="link-select" id="relink-select-${key}" style="margin-top:5px;font-size:.64rem">
+              ${nameOpts}
+            </select>
+            <button class="btn btn-s btn-sm" style="margin-top:4px;font-size:.62rem" onclick="relinkUser('${key}')">
+              <i class="fa-solid fa-rotate"></i> Re-link
+            </button>
+          </td>
+          <td class="mono" style="font-size:.65rem;color:var(--t3)">${u.approvedAt ? new Date(u.approvedAt).toLocaleDateString('en-GB') : '—'}</td>
+          <td class="mono" style="font-size:.65rem;color:var(--t3)">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-GB') : 'Never'}</td>
+          <td>${u.fcmToken ? '<span class="badge b-ok">Active</span>' : '<span class="badge b-wn">None</span>'}</td>
+          <td>
+            <button class="btn btn-d btn-sm" onclick="revokeUser('${key}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`).join('');
+
+      approved.forEach(([key, u]) => {
+        const sel = document.getElementById('relink-select-' + key);
+        if (sel && u.linkedOfficialName) sel.value = u.linkedOfficialName;
+      });
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  MOBILE SIDEBAR
+// ════════════════════════════════════════════════════════
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sb-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ════════════════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════════════════
+(function applyTheme() {
+  const t = localStorage.getItem('pavara-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  const ico = document.getElementById('theme-ico');
+  if (ico) ico.textContent = t === 'dark' ? '🌙' : '☀️';
+})();
+
+function toggleTheme() {
+  const cur  = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('pavara-theme', next);
+  const ico = document.getElementById('theme-ico');
+  if (ico) ico.textContent = next === 'dark' ? '🌙' : '☀️';
+}
+
+// ════════════════════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════════════════════
+function updateClock() {
+  const now  = new Date();
+  const pad  = n => String(n).padStart(2, '0');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mons = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+  const te = document.getElementById('clk-time');
+  if (te) te.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const de = document.getElementById('clk-date');
+  if (de) de.textContent = `${days[now.getDay()]}, ${mons[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  const ge = document.getElementById('greeting');
+  if (ge) {
+    const h = now.getHours();
+    ge.textContent = h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening';
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════
+const PAGE_NAMES = {
+  dashboard : 'Dashboard',
+  employees : 'Employee Details',
+  safety    : 'Safety & Police',
+  reports   : 'Reports',
+  admin     : 'User Approvals'
+};
+function showPage(pageId) {
+  // ── STRICT ROLE GUARD: Employees can ONLY access the dashboard ──
+  if (currentUser && currentUser.role !== 'admin' && pageId !== 'dashboard') {
+    showToast('Dashboard access only — contact Admin for more', 'nf');
+    return;
+  }
+  // Guard admin page from non-admins
+  if (pageId === 'admin' && !isAdmin()) return;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + pageId);
+  if (!target) return;
+  target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(ni => {
+    ni.classList.remove('active');
+    const fn = ni.getAttribute('onclick') || '';
+    if (fn.indexOf("'" + pageId + "'") !== -1) ni.classList.add('active');
+  });
+  const tt = document.getElementById('page-title');
+  if (tt) tt.textContent = PAGE_NAMES[pageId] || pageId;
+  if (pageId === 'dashboard') refreshDash();
+  if (pageId === 'reports')   renderReports();
+  const main = document.querySelector('.main');
+  if (main) main.scrollTop = 0;
+  closeSidebar();
+}
+
+// ════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════
+function showToast(msg, type = 'nf') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="t-dot"></div><span>${msg}</span>`;
+  const w = document.getElementById('toast-wrap');
+  if (w) w.appendChild(t);
+  setTimeout(() => {
+    t.style.animation = 't-out .3s ease forwards';
+    setTimeout(() => t.remove(), 320);
+  }, 3000);
+}
+
+// ════════════════════════════════════════════════════════
+//  DELETE MODAL
+// ════════════════════════════════════════════════════════
+function openDelModal(fn) {
+  pendingDeleteFn = fn;
+  document.getElementById('del-modal').classList.add('show');
+}
+function closeDelModal() {
+  pendingDeleteFn = null;
+  document.getElementById('del-modal').classList.remove('show');
+}
+document.getElementById('del-confirm-btn').addEventListener('click', () => {
+  if (pendingDeleteFn) { pendingDeleteFn(); closeDelModal(); }
+});
+
+// ════════════════════════════════════════════════════════
+//  DATE HELPERS
+// ════════════════════════════════════════════════════════
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d   = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.round((d - now) / 86400000);
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function expiryBadge(dateStr) {
+  const d = daysUntil(dateStr);
+  if (d === null) return '<span class="badge b-ac">N/A</span>';
+  if (d < 0)      return `<span class="badge b-dn">Exp ${Math.abs(d)}d ago</span>`;
+  if (d <= 30)    return `<span class="badge b-wn">${d}d left</span>`;
+  if (d <= 90)    return `<span class="badge b-ac">${d}d left</span>`;
+  return '<span class="badge b-ok">Valid</span>';
+}
+
+// ════════════════════════════════════════════════════════
+//  EXPIRY LOGIC
+// ════════════════════════════════════════════════════════
+function computeSCExpiry(issueDate, empType) {
+  if (!issueDate) return null;
+  const d = new Date(issueDate);
+  if (empType === 'Annual') { d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; }
+  return null;
+}
+function computePRExpiry(issueDate) {
+  if (!issueDate) return null;
+  const d = new Date(issueDate);
+  d.setFullYear(d.getFullYear() + 3);
+  return d.toISOString().split('T')[0];
+}
+function scExpiry(rec) {
+  if (rec.emptype === 'Temporary') return rec.sc_expiry || null;
+  const computed = computeSCExpiry(rec.sc_issue, rec.emptype);
+  return computed || rec.sc_expiry || null;
+}
+function prExpiry(rec) {
+  const computed = computePRExpiry(rec.pr_issue);
+  return computed || rec.pr_expiry || null;
+}
+
+// ════════════════════════════════════════════════════════
+//  FORM: AUTO-CALC / TOGGLE SC EXPIRY
+// ════════════════════════════════════════════════════════
+function calcExpiry() {
+  const empType = (document.getElementById('sf-type') || {}).value || '';
+  const sci     = (document.getElementById('sf-sci')  || {}).value || '';
+  const sceEl   = document.getElementById('sf-sce');
+  const sceLabel= document.getElementById('sf-sce-label');
+  const hint    = document.getElementById('sc-expiry-hint');
+
+  if (empType === 'Temporary') {
+    if (hint)     hint.textContent = '→ manual entry';
+    if (sceLabel) sceLabel.textContent = 'SC Expiry (manual)';
+    if (sceEl)    sceEl.removeAttribute('readonly');
+  } else if (empType === 'Annual') {
+    if (hint)     hint.textContent = '→ auto +1yr';
+    if (sceLabel) sceLabel.textContent = 'SC Expiry (auto)';
+    if (sceEl) { sceEl.setAttribute('readonly', ''); sceEl.value = computeSCExpiry(sci, 'Annual') || ''; }
+  } else {
+    if (hint)     hint.textContent = '→ select type first';
+    if (sceLabel) sceLabel.textContent = 'SC Expiry (auto)';
+    if (sceEl) { sceEl.setAttribute('readonly', ''); sceEl.value = ''; }
+  }
+
+  const pri = (document.getElementById('sf-pri') || {}).value || '';
+  const pre = document.getElementById('sf-pre');
+  if (pre) pre.value = computePRExpiry(pri) || '';
+}
+
+function onSFEmpChange() {
+  const sel = document.getElementById('sf-emp');
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  const nic = document.getElementById('sf-nic');
+  if (nic) nic.value = opt ? (opt.dataset.nic || '') : '';
+}
+
+// ════════════════════════════════════════════════════════
+//  EMP DROPDOWN & AUTO-NUMBER
+// ════════════════════════════════════════════════════════
+function refreshEmpDropdown() {
+  const sel = document.getElementById('sf-emp');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select employee…</option>';
+  allEmployees.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.name;
+    o.textContent = `${e.name}${e.nic ? ' (' + e.nic + ')' : ''}`;
+    o.dataset.nic = e.nic || '';
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+
+  const desigFilter = document.getElementById('emp-filter-desig');
+  if (desigFilter) {
+    const desigs = [...new Set(allEmployees.map(e => e.designation).filter(Boolean))].sort();
+    const curD = desigFilter.value;
+    desigFilter.innerHTML = '<option value="">All Designations</option>' +
+      desigs.map(d => `<option value="${d}">${d}</option>`).join('');
+    if (curD) desigFilter.value = curD;
+  }
+}
+
+function generateEmpNo() {
+  let maxNum = 0;
+  allEmployees.forEach(e => {
+    if (e.empno) {
+      const match = String(e.empno).match(/(\d+)$/);
+      if (match) { const n = parseInt(match[1], 10); if (n > maxNum) maxNum = n; }
+    }
+  });
+  return 'EMP-' + String(maxNum + 1).padStart(3, '0');
+}
+
+// ════════════════════════════════════════════════════════
+//  ALERT ENGINE
+// ════════════════════════════════════════════════════════
+function buildAlerts() {
+  const alerts = [];
+  allSFRecords.forEach(rec => {
+    const scE = scExpiry(rec);
+    const scD = daysUntil(scE);
+    if (scD !== null && scD <= 30) {
+      alerts.push({
+        name: rec.name || '—', card: rec.cardno || '—', emptype: rec.emptype || '—',
+        doc: 'Safety Card', dc: 'sc', days: scD, expDate: scE,
+        status: scD < 0 ? 'exp' : 'wrn'
+      });
+    }
+    const prE = prExpiry(rec);
+    const prD = daysUntil(prE);
+    if (prD !== null && prD <= 365) {
+      alerts.push({
+        name: rec.name || '—', card: rec.cardno || '—', emptype: rec.emptype || '—',
+        doc: 'Police Report', dc: 'pr', days: prD, expDate: prE,
+        status: prD < 0 ? 'exp' : 'wrn'
+      });
+    }
+  });
+
+  alerts.sort((a, b) => {
+    if (a.status === 'exp' && b.status !== 'exp') return -1;
+    if (b.status === 'exp' && a.status !== 'exp') return 1;
+    if (a.status === 'exp' && b.status === 'exp') return a.days - b.days;
+    return a.days - b.days;
+  });
+
+  return alerts;
+}
+
+function fmtDays(n) {
+  n = Math.abs(n);
+  if (n > 365) return `${Math.floor(n/365)}y ${Math.floor((n%365)/30)}m`;
+  if (n > 30)  return `${Math.floor(n/30)}m ${n%30}d`;
+  return `${n}d`;
+}
+
+// ════════════════════════════════════════════════════════
+//  ALERT TABLE RENDERER
+// ════════════════════════════════════════════════════════
+function renderAlertTable(wrapId, alerts, usePersonalHighlight) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+
+  if (!alerts.length) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-ico"><i class="fa-solid fa-circle-check"></i></div>All documents are valid</div>';
+    return;
+  }
+
+  const myOfficialName = (currentUser && currentUser.role !== 'admin')
+    ? (currentUser.officialName || currentUser.name || '').toLowerCase()
+    : null;
+  let myAlerts = [];
+  let otherAlerts = alerts;
+
+  if (usePersonalHighlight && myOfficialName) {
+    myAlerts    = alerts.filter(a => a.name.toLowerCase() === myOfficialName);
+    otherAlerts = alerts.filter(a => a.name.toLowerCase() !== myOfficialName);
+  }
+
+  const orderedAlerts = [...myAlerts, ...otherAlerts];
+
+  const rows = orderedAlerts.map((a, i) => {
+    const isExp    = a.status === 'exp';
+    const isMine   = usePersonalHighlight && myOfficialName && a.name.toLowerCase() === myOfficialName;
+    const rowClass = isMine ? 'row-mine' : (isExp ? 'row-exp' : 'row-wrn');
+
+    const statusBadge = isExp
+      ? `<span class="badge b-dn">Expired</span>`
+      : `<span class="badge b-wn">Expiring Soon</span>`;
+
+    const typeBadge = `<span class="badge ${a.emptype === 'Temporary' ? 'b-wn' : a.emptype === 'Annual' ? 'b-pu' : 'b-ac'}">${a.emptype}</span>`;
+
+    const daysCell = isExp
+      ? `<span style="color:var(--dn);font-weight:700">${fmtDays(a.days)} ago</span>`
+      : `<span style="color:var(--wn);font-weight:700">${fmtDays(a.days)} left</span>`;
+
+    const docBadge = a.dc === 'sc'
+      ? `<span class="badge b-ac">Safety Card</span>`
+      : `<span class="badge b-pu">Police Report</span>`;
+
+    const myPin = isMine ? `<span class="mine-pin"><i class="fa-solid fa-location-dot"></i> You</span>` : '';
+
+    return `<tr class="${rowClass}" data-name="${a.name}" data-status="${a.status}" data-dc="${a.dc}" data-type="${a.emptype}">
+      <td class="mono" style="color:var(--t3)">${isMine ? '★' : i + 1}</td>
+      <td><strong>${a.name}</strong>${myPin}</td>
+      <td class="mono" style="font-size:.66rem;color:var(--t3)">${a.card}</td>
+      <td>${docBadge}</td>
+      <td>${typeBadge}</td>
+      <td class="mono">${fmtDate(a.expDate)}</td>
+      <td>${daysCell}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="alert-tbl-wrap">
+      <table class="alert-tbl">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Card No</th>
+            <th>Document</th>
+            <th>Type</th>
+            <th>Expiry Date</th>
+            <th>Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  SEARCH / FILTER HELPERS
+// ════════════════════════════════════════════════════════
+function clearDashSearch() {
+  ['dash-search','dash-filter-status','dash-filter-doc','dash-filter-type']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderDashAlerts();
+}
+
+function clearEmpSearch() {
+  ['emp-search','emp-filter-desig'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderEmployeeTable();
+}
+
+function clearSFSearch() {
+  ['sf-search','sf-filter-type','sf-filter-status'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderSFTable();
+}
+
+function getSearchVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim().toLowerCase() : '';
+}
+
+function renderDashAlerts() {
+  const search      = getSearchVal('dash-search');
+  const filterStatus= getSearchVal('dash-filter-status');
+  const filterDoc   = getSearchVal('dash-filter-doc');
+  const filterType  = getSearchVal('dash-filter-type');
+
+  let alerts = buildAlerts();
+
+  if (search) {
+    alerts = alerts.filter(a =>
+      a.name.toLowerCase().includes(search) ||
+      a.card.toLowerCase().includes(search) ||
+      a.doc.toLowerCase().includes(search)
+    );
+  }
+  if (filterStatus) alerts = alerts.filter(a => a.status === filterStatus);
+  if (filterDoc)    alerts = alerts.filter(a => a.dc    === filterDoc);
+  if (filterType)   alerts = alerts.filter(a => a.emptype.toLowerCase() === filterType.toLowerCase());
+
+  renderAlertTable('dash-alerts-wrap', alerts, true);
+}
+
+// ════════════════════════════════════════════════════════
+//  ADMIN FULL COMPLIANCE TABLE ON DASHBOARD
+// ════════════════════════════════════════════════════════
+function renderDashFullTable() {
+  if (!isAdmin()) return; // only admin sees this table
+
+  const tbody    = document.getElementById('dash-full-tbody');
+  const chip     = document.getElementById('dash-full-chip');
+  if (!tbody) return;
+
+  const search      = getSearchVal('dash-full-search');
+  const filterType  = getSearchVal('dash-full-filter-type');
+  const filterStatus= getSearchVal('dash-full-filter-status');
+
+  // Build merged rows: all employees + join their SF record
+  let rows = allEmployees.map(e => {
+    const sf = allSFRecords.find(s => s.name === e.name) || null;
+    return { emp: e, sf };
+  });
+
+  // Also include SF records not yet matched to an employee (orphan SF records)
+  const matchedNames = new Set(allEmployees.map(e => e.name));
+  allSFRecords.forEach(sf => {
+    if (!matchedNames.has(sf.name)) {
+      rows.push({ emp: null, sf });
+    }
+  });
+
+  // Apply filters
+  if (search) {
+    rows = rows.filter(r => {
+      const n  = (r.emp ? r.emp.name : r.sf ? r.sf.name : '').toLowerCase();
+      const nic= (r.emp ? r.emp.nic  : r.sf ? r.sf.nic  : '').toLowerCase();
+      const c  = (r.sf  ? r.sf.cardno : '').toLowerCase();
+      const d  = (r.emp ? r.emp.designation : '').toLowerCase();
+      const en = (r.emp ? r.emp.empno : '').toLowerCase();
+      return n.includes(search) || nic.includes(search) || c.includes(search) || d.includes(search) || en.includes(search);
+    });
+  }
+  if (filterType) {
+    rows = rows.filter(r => (r.sf ? r.sf.emptype : '').toLowerCase() === filterType);
+  }
+  if (filterStatus) {
+    rows = rows.filter(r => {
+      if (!r.sf) return filterStatus === 'ok' ? true : false;
+      const sce = scExpiry(r.sf), pre = prExpiry(r.sf);
+      const scD = daysUntil(sce), prD = daysUntil(pre);
+      if (filterStatus === 'exp') return (scD !== null && scD < 0) || (prD !== null && prD < 0);
+      if (filterStatus === 'wrn') return (scD !== null && scD >= 0 && scD <= 30) || (prD !== null && prD >= 0 && prD <= 365);
+      if (filterStatus === 'ok')  return (scD === null || scD > 30) && (prD === null || prD > 365);
+      return true;
+    });
+  }
+
+  if (chip) chip.textContent = rows.length + ' record' + (rows.length !== 1 ? 's' : '');
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="14" class="tbl-empty">No records match your search.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const e   = r.emp;
+    const sf  = r.sf;
+    const sce = sf ? scExpiry(sf) : null;
+    const pre = sf ? prExpiry(sf) : null;
+
+    // Row highlight if any document is expired or expiring
+    const scD = daysUntil(sce), prD = daysUntil(pre);
+    const hasExp = (scD !== null && scD < 0) || (prD !== null && prD < 0);
+    const hasWrn = !hasExp && ((scD !== null && scD <= 30) || (prD !== null && prD <= 365));
+    const rowStyle = hasExp ? 'background:rgba(255,69,58,.04)' : hasWrn ? 'background:rgba(255,159,10,.03)' : '';
+
+    return `<tr style="${rowStyle}">
+      <td class="mono" style="color:var(--t3)">${i + 1}</td>
+      <td class="mono">${e ? (e.empno || '—') : '—'}</td>
+      <td><strong>${e ? (e.name || '—') : (sf ? sf.name : '—')}</strong></td>
+      <td>${e ? (e.designation || '—') : '—'}</td>
+      <td class="mono">${e ? (e.nic || '—') : (sf ? sf.nic || '—' : '—')}</td>
+      <td class="mono">${sf ? (sf.cardno || '—') : '—'}</td>
+      <td>${sf ? `<span class="badge ${sf.emptype==='Temporary'?'b-wn':sf.emptype==='Annual'?'b-pu':'b-ac'}">${sf.emptype}</span>` : '<span class="badge b-ac">N/A</span>'}</td>
+      <td class="mono">${fmtDate(sf ? sf.sc_issue : null)}</td>
+      <td class="mono">${fmtDate(sce)}</td>
+      <td>${expiryBadge(sce)}</td>
+      <td class="mono">${fmtDate(sf ? sf.pr_issue : null)}</td>
+      <td class="mono">${fmtDate(pre)}</td>
+      <td>${expiryBadge(pre)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${sf ? `
+          <button class="btn btn-s btn-sm" onclick="editSF('${sf._key}')" title="Edit Safety/Police Record">
+            <i class="fa-solid fa-shield-halved"></i>
+          </button>
+          <button class="btn btn-d btn-sm" onclick="deleteSF('${sf._key}')" title="Delete Safety Record">
+            <i class="fa-solid fa-trash"></i>
+          </button>` : `
+          <span style="font-size:.6rem;color:var(--t3)">No SF record</span>`}
+          ${e ? `
+          <button class="btn btn-p btn-sm" onclick="editEmployee('${e._key}')" title="Edit Employee">
+            <i class="fa-solid fa-pen"></i>
+          </button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function clearDashFullSearch() {
+  ['dash-full-search','dash-full-filter-type','dash-full-filter-status']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  renderDashFullTable();
+}
+
+// ════════════════════════════════════════════════════════
+//  DASHBOARD REFRESH
+// ════════════════════════════════════════════════════════
+function refreshDash() {
+  // If called while data is already loaded, just re-render
+  if (allEmployees.length > 0 || allSFRecords.length > 0) {
+    _renderDashFromArrays();
+    return;
+  }
+  // If arrays are empty (e.g. fresh login edge case), re-fetch first
+  if (!currentUser) return;
+  Promise.all([
+    db.ref('employees').once('value'),
+    db.ref('safetyRecords').once('value')
+  ]).then(([empSnap, sfSnap]) => {
+    allEmployees = [];
+    if (empSnap.exists()) empSnap.forEach(c => { allEmployees.push({ _key: c.key, ...c.val() }); });
+    allSFRecords = [];
+    if (sfSnap.exists()) sfSnap.forEach(c => { allSFRecords.push({ _key: c.key, ...c.val() }); });
+    const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setText('s-total',  allEmployees.length);
+    setText('r-total',  allEmployees.length);
+    setText('s-safety', allSFRecords.length);
+    setText('r-safety', allSFRecords.length);
+    refreshEmpDropdown();
+    renderTables();
+    _renderDashFromArrays();
+    if (isAdmin()) renderReports();
+  }).catch(err => showToast('Refresh failed: ' + err.message, 'er'));
+}
+
+function _renderDashFromArrays() {
+  const alerts   = buildAlerts();
+  const expired  = alerts.filter(a => a.status === 'exp').length;
+  const expiring = alerts.filter(a => a.status === 'wrn').length;
+
+  const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  setText('s-expiring', expiring);
+  setText('s-expired',  expired);
+
+  const badge = document.getElementById('warn-badge');
+  if (badge) { badge.style.display = alerts.length ? '' : 'none'; badge.textContent = alerts.length; }
+
+  const chip = document.getElementById('alert-chip');
+  if (chip) {
+    if (!alerts.length) {
+      chip.textContent = 'All clear'; chip.className = 'chip chip-ok';
+    } else {
+      const parts = [];
+      if (expired)  parts.push(`${expired} expired`);
+      if (expiring) parts.push(`${expiring} expiring`);
+      chip.textContent = parts.join(' · ');
+      chip.className   = `chip ${expired ? 'chip-dn' : 'chip-wn'}`;
+    }
+  }
+  renderDashAlerts();
+  if (isAdmin()) renderDashFullTable(); // Admin full compliance table on dashboard
+}
+// ════════════════════════════════════════════════════════
+function renderTables() {
+  renderEmployeeTable();
+  renderSFTable();
+}
+
+function renderEmployeeTable() {
+  const tbody = document.getElementById('emp-tbody');
+  if (!tbody) return;
+
+  const search      = getSearchVal('emp-search');
+  const filterDesig = getSearchVal('emp-filter-desig');
+
+  let rows = allEmployees;
+  if (search) rows = rows.filter(e =>
+    (e.name||'').toLowerCase().includes(search) ||
+    (e.nic||'').toLowerCase().includes(search) ||
+    (e.designation||'').toLowerCase().includes(search) ||
+    (e.empno||'').toLowerCase().includes(search)
+  );
+  if (filterDesig) rows = rows.filter(e => (e.designation||'').toLowerCase() === filterDesig);
+
+  const countChip = document.getElementById('emp-count-chip');
+  if (countChip) countChip.textContent = rows.length + ' records' + (rows.length < allEmployees.length ? ` (filtered from ${allEmployees.length})` : '');
+
+  if (!rows.length) {
+    tbody.innerHTML = search || filterDesig
+      ? '<tr><td colspan="8" class="tbl-empty">No results match your search.</td></tr>'
+      : '<tr><td colspan="8" class="tbl-empty">No employees yet — add one above.</td></tr>';
+    return;
+  }
+
+  // Action buttons shown only to admin
+  tbody.innerHTML = rows.slice(0, 200).map((e, i) => `
+    <tr>
+      <td class="mono">${i + 1}</td>
+      <td class="mono">${e.empno || '—'}</td>
+      <td><strong>${e.name || '—'}</strong></td>
+      <td class="mono">${e.nic  || '—'}</td>
+      <td>${e.designation || '—'}</td>
+      <td class="mono">${e.joindate || '—'}</td>
+      <td class="mono">${e.salary ? 'LKR ' + Number(e.salary).toLocaleString() : '—'}</td>
+      <td>
+        ${isAdmin() ? `
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-p btn-sm" onclick="editEmployee('${e._key}')">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button class="btn btn-d btn-sm" onclick="deleteEmployee('${e._key}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>` : '<span style="font-size:.62rem;color:var(--t3)">Read-only</span>'}
+      </td>
+    </tr>`).join('');
+}
+
+function renderSFTable() {
+  const tbody = document.getElementById('sf-tbody');
+  if (!tbody) return;
+
+  const search      = getSearchVal('sf-search');
+  const filterType  = getSearchVal('sf-filter-type');
+  const filterStatus= getSearchVal('sf-filter-status');
+
+  let rows = allSFRecords;
+  if (search) rows = rows.filter(s =>
+    (s.name||'').toLowerCase().includes(search) ||
+    (s.nic||'').toLowerCase().includes(search) ||
+    (s.cardno||'').toLowerCase().includes(search)
+  );
+  if (filterType) rows = rows.filter(s => (s.emptype||'').toLowerCase() === filterType);
+  if (filterStatus) {
+    rows = rows.filter(s => {
+      const sce = scExpiry(s), pre = prExpiry(s);
+      const scD = daysUntil(sce), prD = daysUntil(pre);
+      if (filterStatus === 'exp') return (scD !== null && scD < 0) || (prD !== null && prD < 0);
+      if (filterStatus === 'wrn') return (scD !== null && scD >= 0 && scD <= 30) || (prD !== null && prD >= 0 && prD <= 365);
+      if (filterStatus === 'ok')  return (scD === null || scD > 30) && (prD === null || prD > 365);
+      return true;
+    });
+  }
+
+  const countChip = document.getElementById('sf-count-chip');
+  if (countChip) countChip.textContent = rows.length + ' records' + (rows.length < allSFRecords.length ? ` (filtered from ${allSFRecords.length})` : '');
+
+  if (!rows.length) {
+    tbody.innerHTML = search || filterType || filterStatus
+      ? '<tr><td colspan="12" class="tbl-empty">No results match your search.</td></tr>'
+      : '<tr><td colspan="12" class="tbl-empty">No records yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((s, i) => {
+    const sce = scExpiry(s);
+    const pre = prExpiry(s);
+    return `
+    <tr>
+      <td class="mono">${i + 1}</td>
+      <td><strong>${s.name  || '—'}</strong></td>
+      <td class="mono">${s.nic    || '—'}</td>
+      <td class="mono">${s.cardno || '—'}</td>
+      <td><span class="badge ${s.emptype === 'Temporary' ? 'b-wn' : s.emptype === 'Annual' ? 'b-pu' : 'b-ac'}">${s.emptype || '—'}</span></td>
+      <td class="mono">${fmtDate(s.sc_issue)}</td>
+      <td class="mono">${fmtDate(sce)}</td>
+      <td>${expiryBadge(sce)}</td>
+      <td class="mono">${fmtDate(s.pr_issue)}</td>
+      <td class="mono">${fmtDate(pre)}</td>
+      <td>${expiryBadge(pre)}</td>
+      <td>
+        ${isAdmin() ? `
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-s btn-sm" onclick="editSF('${s._key}')"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-d btn-sm" onclick="deleteSF('${s._key}')"><i class="fa-solid fa-trash"></i></button>
+        </div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  REPORTS
+// ════════════════════════════════════════════════════════
+function renderReports() {
+  const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const alerts   = buildAlerts();
+  const expired  = alerts.filter(a => a.status === 'exp').length;
+  const expiring = alerts.filter(a => a.status === 'wrn').length;
+
+  setText('r-total',    allEmployees.length);
+  setText('r-safety',   allSFRecords.length);
+  setText('r-expiring', expiring);
+  setText('r-expired',  expired);
+
+  const ac = document.getElementById('r-alert-chip');
+  if (ac) ac.textContent = alerts.length + ' alert' + (alerts.length !== 1 ? 's' : '');
+
+  renderAlertTable('r-alerts-wrap', alerts, false);
+
+  const tbody = document.getElementById('r-tbody');
+  if (!tbody) return;
+  if (!allEmployees.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="tbl-empty">No data</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allEmployees.map((e, i) => {
+    const sf  = allSFRecords.find(x => x.name === e.name) || null;
+    const sce = sf ? scExpiry(sf) : null;
+    const pre = sf ? prExpiry(sf) : null;
+    return `
+    <tr>
+      <td class="mono">${i + 1}</td>
+      <td class="mono">${e.empno || '—'}</td>
+      <td><strong>${e.name || '—'}</strong></td>
+      <td>${e.designation || '—'}</td>
+      <td><span class="badge ${sf&&sf.emptype==='Temporary'?'b-wn':sf&&sf.emptype==='Annual'?'b-pu':'b-ac'}">${sf ? sf.emptype : 'N/A'}</span></td>
+      <td class="mono">${fmtDate(sf ? sf.sc_issue : null)}</td>
+      <td class="mono">${fmtDate(sce)}</td>
+      <td>${expiryBadge(sce)}</td>
+      <td class="mono">${fmtDate(sf ? sf.pr_issue : null)}</td>
+      <td class="mono">${fmtDate(pre)}</td>
+      <td>${expiryBadge(pre)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  FIREBASE LISTENERS
+//  Registered ONCE at startup so data stays live.
+//  But the first meaningful render is triggered by
+//  completeLogin() → refreshAllAfterLogin() which runs
+//  AFTER currentUser is set, so isAdmin() is correct.
+// ════════════════════════════════════════════════════════
+let _firebaseListenersStarted = false;
+
+function startFirebaseListeners() {
+  if (_firebaseListenersStarted) return;
+  _firebaseListenersStarted = true;
+
+  db.ref('employees').on('value', snapshot => {
+    allEmployees = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => { allEmployees.push({ _key: child.key, ...child.val() }); });
+    }
+    // Only render if a user is logged in (currentUser is set)
+    if (!currentUser) return;
+    renderTables();
+    refreshEmpDropdown();
+    refreshDash();
+    renderAdminPanel();
+    const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setText('s-total', allEmployees.length);
+    setText('r-total', allEmployees.length);
+  });
+
+  db.ref('safetyRecords').on('value', snapshot => {
+    allSFRecords = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => { allSFRecords.push({ _key: child.key, ...child.val() }); });
+    }
+    // Only render if a user is logged in (currentUser is set)
+    if (!currentUser) return;
+    renderTables();
+    refreshDash();
+    renderAdminPanel();
+    const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setText('s-safety', allSFRecords.length);
+    setText('r-safety', allSFRecords.length);
+
+    if (!isAdmin()) {
+      checkAndNotifyCurrentUser();
+    }
+  });
+}
+
+// Start listeners immediately so data pre-loads in background.
+// Renders are gated on currentUser being set (see guard above).
+startFirebaseListeners();
+
+// ════════════════════════════════════════════════════════
+//  EMPLOYEE CRUD  (admin only — guarded)
+// ════════════════════════════════════════════════════════
+function saveEmployee() {
+  if (!requireAdmin('Save employee')) return;
+  const name = (document.getElementById('e-name') || {}).value?.trim();
+  if (!name) { showToast('Full name is required', 'er'); return; }
+
+  let empno = (document.getElementById('e-empno') || {}).value?.trim();
+  if (!empno) empno = generateEmpNo();
+
+  const data = {
+    empno, name,
+    nic:         (document.getElementById('e-nic')   || {}).value?.trim() || '',
+    address:     (document.getElementById('e-addr')  || {}).value?.trim() || '',
+    designation: (document.getElementById('e-desig') || {}).value?.trim() || '',
+    joindate:    (document.getElementById('e-join')  || {}).value || '',
+    salary:      (document.getElementById('e-sal')   || {}).value || '',
+    savedAt:     new Date().toISOString()
+  };
+
+  if (editingEmpKey) {
+    db.ref('employees/' + editingEmpKey).update(data, err => {
+      if (err) { showToast('Update failed: ' + err.message, 'er'); return; }
+      showToast(`Employee updated ✓ (${empno})`, 'ok');
+    });
+  } else {
+    db.ref('employees').push(data, err => {
+      if (err) { showToast('Save failed: ' + err.message, 'er'); return; }
+      showToast(`Employee saved ✓ (${empno})`, 'ok');
+    });
+  }
+  clearEmpForm();
+}
+
+function editEmployee(key) {
+  if (!requireAdmin('Edit employee')) return;
+  const e = allEmployees.find(x => x._key === key);
+  if (!e) return;
+  editingEmpKey = key;
+  const map = { 'e-empno': e.empno, 'e-name': e.name, 'e-nic': e.nic,
+                'e-addr': e.address, 'e-desig': e.designation, 'e-join': e.joindate, 'e-sal': e.salary };
+  Object.entries(map).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  const lbl = document.getElementById('emp-form-label');
+  if (lbl) { lbl.textContent = 'Editing'; lbl.className = 'chip chip-wn'; }
+  showPage('employees');
+  const formCard = document.querySelector('#page-employees .card');
+  if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function deleteEmployee(key) {
+  if (!requireAdmin('Delete employee')) return;
+  const emp = allEmployees.find(e => e._key === key);
+  const empName = emp ? emp.name : null;
+  openDelModal(() => {
+    const deletions = { ['employees/' + key]: null };
+    if (empName) {
+      allSFRecords.forEach(sf => {
+        if (sf.name === empName) deletions['safetyRecords/' + sf._key] = null;
+      });
+    }
+    const linkedCount = Object.keys(deletions).length - 1;
+    db.ref('/').update(deletions, err => {
+      if (err) { showToast('Delete failed: ' + err.message, 'er'); return; }
+      showToast(linkedCount > 0 ? `Employee + ${linkedCount} linked record(s) deleted` : 'Employee deleted', 'ok');
+    });
+  });
+}
+
+function clearEmpForm() {
+  ['e-empno','e-name','e-nic','e-addr','e-desig','e-join','e-sal']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  editingEmpKey = null;
+  const lbl = document.getElementById('emp-form-label');
+  if (lbl) { lbl.textContent = 'New Record'; lbl.className = 'chip chip-ac'; }
+}
+
+// ════════════════════════════════════════════════════════
+//  SAFETY RECORD CRUD  (admin only — guarded)
+// ════════════════════════════════════════════════════════
+function saveSF() {
+  if (!requireAdmin('Save safety record')) return;
+  const name = (document.getElementById('sf-emp') || {}).value;
+  if (!name) { showToast('Please select an employee', 'er'); return; }
+
+  const empType  = (document.getElementById('sf-type') || {}).value || '';
+  const scIssue  = (document.getElementById('sf-sci')  || {}).value || '';
+  const prIssue  = (document.getElementById('sf-pri')  || {}).value || '';
+
+  let scExp;
+  if (empType === 'Temporary') {
+    scExp = (document.getElementById('sf-sce') || {}).value || '';
+  } else {
+    scExp = computeSCExpiry(scIssue, empType) || '';
+  }
+  const prExp = computePRExpiry(prIssue) || '';
+
+  const data = {
+    name, nic: (document.getElementById('sf-nic') || {}).value || '',
+    cardno: (document.getElementById('sf-card') || {}).value || '',
+    emptype: empType, sc_issue: scIssue, sc_expiry: scExp,
+    pr_issue: prIssue, pr_expiry: prExp, savedAt: new Date().toISOString()
+  };
+
+  if (editingSFKey) {
+    db.ref('safetyRecords/' + editingSFKey).update(data, err => {
+      if (err) { showToast('Update failed: ' + err.message, 'er'); return; }
+      showToast('Record updated ✓', 'ok');
+      notifyUserOfRecordUpdate(name);
+    });
+    editingSFKey = null;
+    const lbl = document.getElementById('sf-form-label');
+    if (lbl) lbl.textContent = 'New Record';
+  } else {
+    db.ref('safetyRecords').push(data, err => {
+      if (err) { showToast('Save failed: ' + err.message, 'er'); return; }
+      showToast('Record saved ✓', 'ok');
+    });
+  }
+  clearSFForm();
+}
+
+function editSF(key) {
+  if (!requireAdmin('Edit safety record')) return;
+  const s = allSFRecords.find(x => x._key === key);
+  if (!s) return;
+  editingSFKey = key;
+  const map = { 'sf-emp': s.name, 'sf-nic': s.nic, 'sf-card': s.cardno,
+                'sf-type': s.emptype, 'sf-sci': s.sc_issue, 'sf-pri': s.pr_issue,
+                'sf-pre': prExpiry(s) || s.pr_expiry };
+  Object.entries(map).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  calcExpiry();
+  const sceEl = document.getElementById('sf-sce');
+  if (sceEl) sceEl.value = scExpiry(s) || s.sc_expiry || '';
+  const lbl = document.getElementById('sf-form-label');
+  if (lbl) lbl.textContent = 'Editing';
+  showPage('safety');
+}
+
+function deleteSF(key) {
+  if (!requireAdmin('Delete safety record')) return;
+  openDelModal(() => {
+    db.ref('safetyRecords/' + key).remove(err => {
+      if (err) showToast('Delete failed: ' + err.message, 'er');
+      else     showToast('Record deleted', 'ok');
+    });
+  });
+}
+
+function clearSFForm() {
+  ['sf-emp','sf-nic','sf-card','sf-type','sf-sci','sf-sce','sf-pri','sf-pre']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  editingSFKey = null;
+  const lbl = document.getElementById('sf-form-label');
+  if (lbl) lbl.textContent = 'New Record';
+  const sceEl    = document.getElementById('sf-sce');
+  const sceLabel = document.getElementById('sf-sce-label');
+  const hint     = document.getElementById('sc-expiry-hint');
+  if (sceEl)    { sceEl.setAttribute('readonly', ''); sceEl.value = ''; }
+  if (sceLabel) sceLabel.textContent = 'SC Expiry (auto)';
+  if (hint)     hint.textContent = '→ select type first';
+}
+
+// ════════════════════════════════════════════════════════
+//  CSV / EXCEL EXPORTS  (admin only — guarded)
+// ════════════════════════════════════════════════════════
+function escCSV(v) { return '"' + String(v ?? '').replace(/"/g, '""') + '"'; }
+function toCSV(rows) { return rows.map(r => r.map(escCSV).join(',')).join('\n'); }
+function download(content, name, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+}
+
+function exportEmpCSV() {
+  if (!requireAdmin('Export CSV')) return;
+  const h = ['#','Emp No','Name','NIC','Address','Designation','Join Date','Salary'];
+  const r = allEmployees.map((e, i) => [i+1, e.empno, e.name, e.nic, e.address, e.designation, e.joindate, e.salary]);
+  download(toCSV([h, ...r]), 'employees.csv', 'text/csv');
+  showToast('Employees exported', 'ok');
+}
+
+function exportSFCSV() {
+  if (!requireAdmin('Export CSV')) return;
+  const h = ['#','Name','NIC','Card No','Type','SC Issue','SC Expiry','PR Issue','PR Expiry'];
+  const r = allSFRecords.map((s, i) => [i+1, s.name, s.nic, s.cardno, s.emptype, s.sc_issue, scExpiry(s), s.pr_issue, prExpiry(s)]);
+  download(toCSV([h, ...r]), 'safety_records.csv', 'text/csv');
+  showToast('Safety records exported', 'ok');
+}
+
+function exportAlertsCSV() {
+  if (!requireAdmin('Export alerts')) return;
+  const alerts = buildAlerts();
+  if (!alerts.length) { showToast('No alerts to export', 'nf'); return; }
+  const h = ['Name','Document','Card No','Type','Status','Days','Expiry'];
+  const r = alerts.map(a => [
+    a.name, a.doc, a.card, a.emptype,
+    a.status === 'exp' ? `Expired ${Math.abs(a.days)}d ago` : `${a.days}d remaining`,
+    a.days, a.expDate
+  ]);
+  download(toCSV([h, ...r]), `alerts_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+  showToast('Alerts exported', 'ok');
+}
+
+function exportExcel() {
+  if (!requireAdmin('Export Excel')) return;
+  if (window.XLSX) { doExcel(); return; }
+  const s = document.createElement('script');
+  s.src    = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = doExcel;
+  s.onerror= () => { showToast('SheetJS failed — falling back to CSV', 'er'); exportSFCSV(); };
+  document.head.appendChild(s);
+}
+
+function doExcel() {
+  if (!requireAdmin('Export Excel')) return;
+  const X  = window.XLSX;
+  const wb = X.utils.book_new();
+
+  const eH = ['#','Emp No','Name','NIC','Address','Designation','Join Date','Salary'];
+  const eR = allEmployees.map((e,i) => [i+1,e.empno,e.name,e.nic,e.address,e.designation,e.joindate,e.salary]);
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([eH,...eR]), 'Employees');
+
+  const scH = ['#','Name','NIC','Card No','Type','SC Issue','SC Expiry','SC Status','Days Left'];
+  const scR = allSFRecords.map((s,i) => {
+    const e = scExpiry(s), d = daysUntil(e);
+    return [i+1, s.name, s.nic, s.cardno, s.emptype, s.sc_issue, e,
+            d===null?'N/A':d<0?`Expired ${Math.abs(d)}d ago`:d<=30?`${d}d left`:'Valid', d??''];
+  });
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([scH,...scR]), 'Safety Cards');
+
+  const prH = ['#','Name','NIC','Card No','Type','PR Issue','PR Expiry','PR Status','Days Left'];
+  const prR = allSFRecords.map((s,i) => {
+    const e = prExpiry(s), d = daysUntil(e);
+    return [i+1, s.name, s.nic, s.cardno, s.emptype, s.pr_issue, e,
+            d===null?'N/A':d<0?`Expired ${Math.abs(d)}d ago`:d<=365?`${d}d left`:'Valid', d??''];
+  });
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([prH,...prR]), 'Police Reports');
+
+  const aH = ['Name','Document','Card No','Type','Status','Days','Expiry'];
+  const aR = buildAlerts().map(a => [
+    a.name, a.doc, a.card, a.emptype,
+    a.status==='exp'?`Expired ${Math.abs(a.days)}d ago`:`${a.days}d remaining`,
+    a.days, a.expDate
+  ]);
+  X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([aH,...aR]), 'Status Alerts');
+
+  X.writeFile(wb, `PavaraPayroll_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast('Excel exported — 4 sheets', 'ok');
+}
+</script>
+</body>
+</html>
